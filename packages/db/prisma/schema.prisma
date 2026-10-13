@@ -3,14 +3,115 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Employee {
+  employeeId      Int      @id @default(autoincrement()) @map("EmployeeID")
+  firstName       String   @db.VarChar(100) @map("FirstName")
+  lastName        String   @db.VarChar(100) @map("LastName")
+  email           String   @unique @db.VarChar(255) @map("Email")
+  officeLocation  String?  @db.VarChar(100) @map("OfficeLocation")
+  department      String?  @db.VarChar(100) @map("Department")
+  role            String?  @db.VarChar(100) @map("Role")
+  isActive        Boolean  @default(true) @map("IsActive")
+  createdDate     DateTime @default(now()) @map("CreatedDate")
+
+  notifications   Notification[]
+  interests       EmployeeInterest[]
+  matchParticipation MatchParticipant[]
+  hrAdministrator HRAdministrator?
+
+  @@index([email], map: "IX_Employee_Email")
+  @@map("Employee")
+}
+
+model Interest {
+  interestId   Int    @id @default(autoincrement()) @map("InterestID")
+  interestName String @unique @db.VarChar(100) @map("InterestName")
+
+  employees EmployeeInterest[]
+
+  @@map("Interest")
+}
+
+model Match {
+  matchId               Int      @id @default(autoincrement()) @map("MatchID")
+  matchDate             DateTime @default(now()) @map("MatchDate")
+  matchType             String   @db.VarChar(50) @map("MatchType")
+  matchStatus           String   @db.VarChar(50) @map("MatchStatus")
+  generatedByWheelSpin  Boolean  @default(false) @map("GeneratedByWheelSpin")
+
+  participants MatchParticipant[]
+  meetings     Meeting[]
+
+  @@map("Match")
+}
+
+model EmployeeInterest {
+  employeeInterestId Int @id @default(autoincrement()) @map("EmployeeInterestID")
+  employeeId         Int @map("EmployeeID")
+  interestId         Int @map("InterestID")
+
+  employee Employee @relation(fields: [employeeId], references: [employeeId], onDelete: Cascade, onUpdate: Cascade)
+  interest Interest @relation(fields: [interestId], references: [interestId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([employeeId, interestId], map: "UQ_Employee_Interest")
+  @@index([employeeId], map: "IX_EmployeeInterest_EmployeeID")
+  @@index([interestId], map: "IX_EmployeeInterest_InterestID")
+  @@map("Employee_Interest")
+}
+
+model Notification {
+  notificationId Int      @id @default(autoincrement()) @map("NotificationID")
+  employeeId     Int      @map("EmployeeID")
+  message        String   @db.Text @map("Message")
+  sentDate       DateTime @default(now()) @map("SentDate")
+  isRead         Boolean  @default(false) @map("IsRead")
+
+  employee Employee @relation(fields: [employeeId], references: [employeeId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([employeeId], map: "IX_Notification_EmployeeID")
+  @@map("Notification")
+}
+
+model MatchParticipant {
+  matchParticipantId Int @id @default(autoincrement()) @map("MatchParticipantID")
+  matchId            Int @map("MatchID")
+  employeeId         Int @map("EmployeeID")
+
+  match    Match    @relation(fields: [matchId], references: [matchId], onDelete: Cascade, onUpdate: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [employeeId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([matchId, employeeId], map: "UQ_Match_Employee")
+  @@index([matchId], map: "IX_MatchParticipant_MatchID")
+  @@index([employeeId], map: "IX_MatchParticipant_EmployeeID")
+  @@map("Match_Participant")
+}
+
+model HRAdministrator {
+  adminId         Int    @id @default(autoincrement()) @map("AdminID")
+  employeeId      Int    @unique @map("EmployeeID")
+  permissionLevel String @db.VarChar(50) @map("PermissionLevel")
+
+  employee Employee @relation(fields: [employeeId], references: [employeeId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([employeeId], map: "IX_HRAdministrator_EmployeeID")
+  @@map("HR_Administrator")
+}
+
+model Meeting {
+  meetingId   Int      @id @default(autoincrement()) @map("MeetingID")
+  matchId     Int      @map("MatchID")
+  meetingDate DateTime @db.Date @map("MeetingDate")
+  startTime   DateTime @db.Time(0) @map("StartTime")
+  endTime     DateTime @db.Time(0) @map("EndTime")
+  location    String?  @db.VarChar(255) @map("Location")
+  status      String   @db.VarChar(50) @map("Status")
+
+  match Match @relation(fields: [matchId], references: [matchId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([matchId], map: "IX_Meeting_MatchID")
+  @@map("Meeting")
 }
