@@ -43,7 +43,7 @@ export default function SpinWheel() {
 						key={label}
 						className={`wheel-name${isOrangeSegment ? " wheel-name--dark" : ""}`}
 						style={{
-							transform: `rotate(${angle}deg) translateY(-108px) rotate(${textRotation}deg)`,
+							transform: `rotate(${angle}deg) translateY(-108px) rotate(${textRotation}deg) translate(-50%, -50%)`,
 						}}
 					>
 						{label}
