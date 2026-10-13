@@ -1,7 +1,38 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { SiteFooter, SiteHeader } from "../site-chrome";
+import SpinWheel from "../../components/spin-wheel";
+import MeetupChat from "../../components/meetup-chat";
 
-export default function MeetupsPage() {
+	const validAuthRoles = new Set(["employee", "hr_admin"]);
+
+const demoMeetup = {
+	otherPersonName: "Jordan Lee",
+	date: "Saturday, 24 October 2026",
+	time: "10:30 am",
+	location: "Example Coffee House, Sample Street",
+	messages: [
+		{
+			id: "demo-1",
+			from: "contact" as const,
+			text: "Looking forward to meeting up. Does 10:30 still work for you?",
+			time: "9:14 am",
+		},
+		{
+			id: "demo-2",
+			from: "you" as const,
+			text: "Yes, see you there!",
+			time: "9:21 am",
+		},
+	],
+};
+
+export default async function MeetupsPage() {
+	const requestHeaders = await headers();
+	const userId = requestHeaders.get("x-user-id");
+	const userRole = requestHeaders.get("x-user-role");
+	const isLoggedIn = Boolean(userId && userRole && validAuthRoles.has(userRole));
+
 	return (
 		<>
 			<SiteHeader activePage="meetups" />
@@ -22,37 +53,58 @@ export default function MeetupsPage() {
 									How it works <span aria-hidden="true">→</span>
 								</Link>
 							</div>
-							<div
-								className="wheel-panel"
-								role="img"
-								aria-label="An empty spin wheel; meetup names will be added later"
-							>
-								<div className="name-wheel" aria-hidden="true">
-									<div className="wheel-center">CC</div>
-								</div>
-								<p className="wheel-caption">Names will appear when data is popuplated.----PLACEHOLDER----</p>
+							<div className="wheel-panel">
+								<SpinWheel />
+								<p className="wheel-caption" id="wheel-caption">
+									Click the wheel to spin a preview. Names will be added later.
+								</p>
 							</div>
 						</div>
 					</div>
 				</section>
 
-				<section className="personal-section" id="personal">
-					<div className="page-width personal-inner">
-						<div>
-							<p className="eyebrow">A more personal kind of meetup</p>
-							<h2>Your coffee. Your kind of conversation.</h2>
+				<section className="upcoming-section" id="upcoming-meetups">
+					<div className="page-width">
+						<div className="upcoming-heading">
+							<p className="eyebrow">Your schedule</p>
+							<h2>Upcoming meetups</h2>
 						</div>
-						<p>
-							Bring your interests and curiosity. Leave room for a new connection.
-						</p>
+						<div className="upcoming-meetup">
+							<div className="meetup-details">
+								<p className="eyebrow">Demo meetup</p>
+								<h3 className="meetup-person-name">
+									{demoMeetup.otherPersonName}
+								</h3>
+								<dl className="meetup-facts">
+									<div>
+										<dt>Date</dt>
+										<dd>{demoMeetup.date}</dd>
+									</div>
+									<div>
+										<dt>Time</dt>
+										<dd>{demoMeetup.time}</dd>
+									</div>
+									<div className="meetup-fact-location">
+										<dt>Location</dt>
+										<dd>{demoMeetup.location}</dd>
+									</div>
+								</dl>
+							</div>
+							<MeetupChat
+								contactName={demoMeetup.otherPersonName}
+								initialMessages={demoMeetup.messages}
+							/>
+						</div>
 					</div>
 				</section>
 
-				<section className="meetups-join page-width">
-					<p className="eyebrow">Ready when you are</p>
-					<h2>Find your next coffee conversation.</h2>
-					<Link className="button-primary" href="/#join">Join Coffee Connect</Link>
-				</section>
+				{!isLoggedIn && (
+					<section className="meetups-join page-width">
+						<p className="eyebrow">Ready when you are</p>
+						<h2>Find your next coffee conversation.</h2>
+						<Link className="button-primary" href="/signup">Join Coffee Connect</Link>
+					</section>
+				)}
 			</main>
 			<SiteFooter />
 		</>
