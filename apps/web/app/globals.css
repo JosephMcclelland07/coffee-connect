@@ -6,7 +6,7 @@
 	--line: #e7e6e2;
 	--red: #c92f2b;
 	--red-dark: #a92120;
-	--green: #355c4c;
+	--green: #e78b0b;
 }
 
 * {
@@ -116,6 +116,10 @@ a:focus-visible {
 	font-weight: 700;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
+}
+
+.hero-copy .eyebrow {
+	color: #000000;
 }
 
 h1,
@@ -248,13 +252,13 @@ h2,
 	border-radius: 50%;
 	background: conic-gradient(
 		var(--red) 0deg 45deg,
-		#f6e8d7 45deg 90deg,
+		#6f1daa 45deg 90deg,
 		var(--green) 90deg 135deg,
-		#e6eee8 135deg 180deg,
+		#0968b0 135deg 180deg,
 		var(--red) 180deg 225deg,
-		#f6e8d7 225deg 270deg,
+		#6f1daa 225deg 270deg,
 		var(--green) 270deg 315deg,
-		#e6eee8 315deg 360deg
+		#0968b0 315deg 360deg
 	);
 	box-shadow: 0 12px 28px rgb(38 33 30 / 12%);
 }
@@ -374,6 +378,10 @@ h2,
 	margin-bottom: 42px;
 }
 
+.steps-section .eyebrow {
+	color: #000000;
+}
+
 .steps-grid {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -389,7 +397,7 @@ h2,
 .step-number {
 	display: block;
 	margin-bottom: 25px;
-	color: var(--red);
+	color: var(--green);
 	font-family: Georgia, "Times New Roman", serif;
 	font-size: 20px;
 }
@@ -419,7 +427,7 @@ h2,
 }
 
 .join-section .eyebrow {
-	color: #dce9e1;
+	color: #f5eadc;
 }
 
 .join-section h2 {

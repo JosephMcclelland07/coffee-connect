@@ -32,7 +32,7 @@ export function SiteHeader({ activePage }: SiteHeaderProps) {
 					<Link className="nav-link" href={isMeetups ? "#personal" : "/meetups#personal"}>
 						Personal
 					</Link>
-					<Link className="signup-link" href={isHome ? "#join" : "/#join"}>
+					<Link className="signup-link" href="/signup">
 						Sign up
 					</Link>
 				</nav>

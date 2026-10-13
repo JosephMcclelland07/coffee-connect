@@ -38,18 +38,18 @@ export default function HomePage() {
 					<div className="steps-grid">
 						<article className="step-item">
 							<span className="step-number">01</span>
-							<h3>Find a meetup</h3>
-							<p>Explore coffee gatherings and choose one that feels right.</p>
+							<h3>Fill in your interests</h3>
+							<p>Make your interests known so the wheel can find your next coffee companion.</p>
 						</article>
 						<article className="step-item">
 							<span className="step-number">02</span>
-							<h3>Make a plan</h3>
-							<p>Pick a time and place that works for you.</p>
+							<h3>Spin the wheel</h3>
+							<p>Spin the wheel to find your next coffee companion.</p>
 						</article>
 						<article className="step-item">
 							<span className="step-number">03</span>
 							<h3>Meet over coffee</h3>
-							<p>Show up, settle in, and enjoy a real conversation.</p>
+							<p>Show up, settle in, and enjoy a real conversation, make new friends.</p>
 						</article>
 					</div>
 				</section>

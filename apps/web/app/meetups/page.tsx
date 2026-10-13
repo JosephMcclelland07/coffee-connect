@@ -16,9 +16,7 @@ export default function MeetupsPage() {
 							<div className="meetups-overview">
 								<h2>What are they?</h2>
 								<p>
-									Meetups bring people together for a relaxed conversation over
-									a cup of coffee. The name wheel will select participants once
-									names are added for an event.
+                                    This is where you will select the next person to meet up with. Spin now to find your next person with similar interests
 								</p>
 								<Link className="text-link" href="/#how-it-works">
 									How it works <span aria-hidden="true">→</span>
@@ -32,7 +30,7 @@ export default function MeetupsPage() {
 								<div className="name-wheel" aria-hidden="true">
 									<div className="wheel-center">CC</div>
 								</div>
-								<p className="wheel-caption">Names will appear here when a meetup is set up.</p>
+								<p className="wheel-caption">Names will appear when data is popuplated.----PLACEHOLDER----</p>
 							</div>
 						</div>
 					</div>
