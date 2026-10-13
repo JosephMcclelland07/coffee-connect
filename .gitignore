@@ -1,6 +1,9 @@
 # Dependencies (regenerated via `npm install`)
 node_modules/
 
+# Prisma client (generated from the schema)
+packages/db/src/generated/prisma/
+
 # TypeScript compiler build output
 dist/
 

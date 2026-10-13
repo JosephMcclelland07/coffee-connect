@@ -59,28 +59,46 @@ VALUES
     ('Volunteering');
 
 
-INSERT INTO `Match` (MatchDate, MatchType, MatchStatus, GeneratedByWheelSpin)
-VALUES
-    (CURRENT_TIMESTAMP - INTERVAL 19 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 18 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 17 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 16 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 15 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 14 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 13 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 12 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 11 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 10 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 9 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 8 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 7 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 6 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 5 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 4 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 3 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 2 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP - INTERVAL 1 DAY, 'Interest-Based', 'Completed', FALSE),
-    (CURRENT_TIMESTAMP, 'Interest-Based', 'Completed', FALSE);
+INSERT INTO `Match` (
+    MatchDate,
+    MatchType,
+    MatchStatus,
+    GeneratedByWheelSpin,
+    EmployeeOneID,
+    EmployeeTwoID
+)
+SELECT
+    CURRENT_TIMESTAMP - INTERVAL (19 - match_seed.MatchOffset) DAY,
+    'Interest-Based',
+    'Completed',
+    FALSE,
+    employee_one.EmployeeID,
+    employee_two.EmployeeID
+FROM (
+    SELECT 0 AS MatchOffset, 'ava.mitchell@example.com' AS EmployeeOneEmail, 'noah.patel@example.com' AS EmployeeTwoEmail
+    UNION ALL SELECT 1, 'mia.thompson@example.com', 'liam.roberts@example.com'
+    UNION ALL SELECT 2, 'isla.campbell@example.com', 'oliver.nguyen@example.com'
+    UNION ALL SELECT 3, 'amelia.walker@example.com', 'jack.evans@example.com'
+    UNION ALL SELECT 4, 'freya.morgan@example.com', 'leo.hughes@example.com'
+    UNION ALL SELECT 5, 'grace.bennett@example.com', 'theo.reed@example.com'
+    UNION ALL SELECT 6, 'lily.foster@example.com', 'oscar.murphy@example.com'
+    UNION ALL SELECT 7, 'poppy.bailey@example.com', 'ava.mitchell@example.com'
+    UNION ALL SELECT 8, 'noah.patel@example.com', 'mia.thompson@example.com'
+    UNION ALL SELECT 9, 'liam.roberts@example.com', 'isla.campbell@example.com'
+    UNION ALL SELECT 10, 'oliver.nguyen@example.com', 'amelia.walker@example.com'
+    UNION ALL SELECT 11, 'jack.evans@example.com', 'freya.morgan@example.com'
+    UNION ALL SELECT 12, 'leo.hughes@example.com', 'grace.bennett@example.com'
+    UNION ALL SELECT 13, 'theo.reed@example.com', 'lily.foster@example.com'
+    UNION ALL SELECT 14, 'oscar.murphy@example.com', 'poppy.bailey@example.com'
+    UNION ALL SELECT 15, 'ava.mitchell@example.com', 'mia.thompson@example.com'
+    UNION ALL SELECT 16, 'noah.patel@example.com', 'isla.campbell@example.com'
+    UNION ALL SELECT 17, 'liam.roberts@example.com', 'oliver.nguyen@example.com'
+    UNION ALL SELECT 18, 'amelia.walker@example.com', 'freya.morgan@example.com'
+    UNION ALL SELECT 19, 'jack.evans@example.com', 'leo.hughes@example.com'
+) AS match_seed
+JOIN Employee employee_one ON employee_one.Email = match_seed.EmployeeOneEmail
+JOIN Employee employee_two ON employee_two.Email = match_seed.EmployeeTwoEmail
+ORDER BY match_seed.MatchOffset;
 
 SET @seed_match_first_id = LAST_INSERT_ID();
 

@@ -20,7 +20,8 @@ model Employee {
 
   notifications   Notification[]
   interests       EmployeeInterest[]
-  matchParticipation MatchParticipant[]
+  matchesAsEmployeeOne Match[] @relation("MatchEmployeeOne")
+  matchesAsEmployeeTwo Match[] @relation("MatchEmployeeTwo")
   hrAdministrator HRAdministrator?
 
   @@index([email], map: "IX_Employee_Email")
@@ -42,10 +43,15 @@ model Match {
   matchType             String   @db.VarChar(50) @map("MatchType")
   matchStatus           String   @db.VarChar(50) @map("MatchStatus")
   generatedByWheelSpin  Boolean  @default(false) @map("GeneratedByWheelSpin")
+  employeeOneId         Int      @map("EmployeeOneID")
+  employeeTwoId         Int      @map("EmployeeTwoID")
 
-  participants MatchParticipant[]
-  meetings     Meeting[]
+  employeeOne Employee  @relation("MatchEmployeeOne", fields: [employeeOneId], references: [employeeId], onDelete: Cascade, onUpdate: Cascade)
+  employeeTwo Employee  @relation("MatchEmployeeTwo", fields: [employeeTwoId], references: [employeeId], onDelete: Cascade, onUpdate: Cascade)
+  meetings    Meeting[]
 
+  @@index([employeeOneId], map: "IX_Match_EmployeeOneID")
+  @@index([employeeTwoId], map: "IX_Match_EmployeeTwoID")
   @@map("Match")
 }
 
@@ -74,20 +80,6 @@ model Notification {
 
   @@index([employeeId], map: "IX_Notification_EmployeeID")
   @@map("Notification")
-}
-
-model MatchParticipant {
-  matchParticipantId Int @id @default(autoincrement()) @map("MatchParticipantID")
-  matchId            Int @map("MatchID")
-  employeeId         Int @map("EmployeeID")
-
-  match    Match    @relation(fields: [matchId], references: [matchId], onDelete: Cascade, onUpdate: Cascade)
-  employee Employee @relation(fields: [employeeId], references: [employeeId], onDelete: Cascade, onUpdate: Cascade)
-
-  @@unique([matchId, employeeId], map: "UQ_Match_Employee")
-  @@index([matchId], map: "IX_MatchParticipant_MatchID")
-  @@index([employeeId], map: "IX_MatchParticipant_EmployeeID")
-  @@map("Match_Participant")
 }
 
 model HRAdministrator {
