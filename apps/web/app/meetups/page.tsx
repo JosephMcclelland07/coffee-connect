@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "../site-chrome";
+import SpinWheel from "../../components/spin-wheel";
 
 export default function MeetupsPage() {
 	return (
@@ -22,29 +23,28 @@ export default function MeetupsPage() {
 									How it works <span aria-hidden="true">→</span>
 								</Link>
 							</div>
-							<div
-								className="wheel-panel"
-								role="img"
-								aria-label="An empty spin wheel; meetup names will be added later"
-							>
-								<div className="name-wheel" aria-hidden="true">
-									<div className="wheel-center">CC</div>
-								</div>
-								<p className="wheel-caption">Names will appear when data is popuplated.----PLACEHOLDER----</p>
+							<div className="wheel-panel">
+								<SpinWheel />
+								<p className="wheel-caption" id="wheel-caption">
+									Click the wheel to spin a preview. Names will be added later.
+								</p>
 							</div>
 						</div>
 					</div>
 				</section>
 
-				<section className="personal-section" id="personal">
-					<div className="page-width personal-inner">
-						<div>
-							<p className="eyebrow">A more personal kind of meetup</p>
-							<h2>Your coffee. Your kind of conversation.</h2>
+				<section className="upcoming-section" id="upcoming-meetups">
+					<div className="page-width">
+						<div className="upcoming-heading">
+							<p className="eyebrow">Your schedule</p>
+							<h2>Upcoming meetups</h2>
 						</div>
-						<p>
-							Bring your interests and curiosity. Leave room for a new connection.
-						</p>
+						<div className="upcoming-empty" role="status">
+							<p className="upcoming-empty-title">No upcoming meetups yet</p>
+							<p>
+								When you have a meetup scheduled, its details will appear here.
+							</p>
+						</div>
 					</div>
 				</section>
 

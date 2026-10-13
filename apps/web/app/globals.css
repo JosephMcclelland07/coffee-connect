@@ -244,10 +244,32 @@ h2,
 	background: #ffffff;
 }
 
-.name-wheel {
+.spin-wheel-control {
 	position: relative;
+	display: block;
 	width: min(100%, 340px);
 	aspect-ratio: 1;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	cursor: pointer;
+}
+
+.spin-wheel-control:focus-visible {
+	outline: 3px solid var(--ink);
+	outline-offset: 7px;
+}
+
+.spin-wheel-control:active {
+	transform: scale(0.985);
+}
+
+.name-wheel {
+	position: relative;
+	display: block;
+	width: 100%;
+	height: 100%;
 	border: 9px solid #ffffff;
 	border-radius: 50%;
 	background: conic-gradient(
@@ -261,19 +283,37 @@ h2,
 		#0968b0 315deg 360deg
 	);
 	box-shadow: 0 12px 28px rgb(38 33 30 / 12%);
+	transition: transform 2.5s cubic-bezier(0.12, 0.75, 0.16, 1);
 }
 
-.name-wheel::before {
+.spin-wheel-pointer {
 	position: absolute;
-	top: -19px;
+	z-index: 1;
+	top: 6px;
 	left: 50%;
 	width: 0;
 	height: 0;
 	border: 15px solid transparent;
-	border-top: 0;
-	border-bottom: 24px solid var(--ink);
-	content: "";
+	border-top: 24px solid #ffffff;
+	border-bottom: 0;
 	transform: translateX(-50%);
+}
+
+.wheel-name {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: max-content;
+	color: #ffffff;
+	font-size: 12px;
+	font-weight: 700;
+	text-shadow: 0 1px 2px rgb(0 0 0 / 28%);
+	white-space: nowrap;
+}
+
+.wheel-name--dark {
+	color: var(--ink);
+	text-shadow: none;
 }
 
 .wheel-center {
@@ -303,19 +343,16 @@ h2,
 	text-align: center;
 }
 
-.personal-section {
-	padding: 56px 0;
-	background: var(--paper);
+.upcoming-section {
+	padding: 56px 0 64px;
+	background: var(--soft);
 }
 
-.personal-inner {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 44px;
+.upcoming-heading {
+	margin-bottom: 28px;
 }
 
-.personal-inner h2,
+.upcoming-heading h2,
 .meetups-join h2 {
 	max-width: 620px;
 	margin-bottom: 0;
@@ -324,12 +361,22 @@ h2,
 	font-weight: 500;
 }
 
-.personal-inner > p {
-	max-width: 420px;
-	margin-bottom: 0;
+.upcoming-empty {
+	padding: 22px 0 0;
+	border-top: 1px solid var(--line);
 	color: var(--muted);
 	font-size: 16px;
 	line-height: 1.6;
+}
+
+.upcoming-empty-title {
+	margin-bottom: 6px;
+	color: var(--ink);
+	font-weight: 700;
+}
+
+.upcoming-empty p:last-child {
+	margin-bottom: 0;
 }
 
 .meetups-join {
