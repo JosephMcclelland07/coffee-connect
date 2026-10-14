@@ -1,56 +1,170 @@
 "use client";
 
-import { useState } from "react";
+import { type TransitionEvent, useMemo, useState } from "react";
 
-export default function SpinWheel() {
+type WheelPerson = {
+	id: string;
+	name: string;
+	interests: string[];
+};
+
+type SpinWheelProps = {
+	currentUserId: string;
+	currentUserInterests: string[];
+	people: WheelPerson[];
+};
+
+type SpinResult = {
+	name: string;
+	sharedInterests: number;
+	wasTieBreak: boolean;
+};
+
+function getCryptographicRandomIndex(size: number) {
+	if (size <= 1) {
+		return 0;
+	}
+
+	const maxUint32 = 2 ** 32 - 1;
+	const moduloBiasThreshold = maxUint32 - ((maxUint32 + 1) % size);
+	const randomBuffer = new Uint32Array(1);
+
+	while (true) {
+		crypto.getRandomValues(randomBuffer);
+		const randomValue = randomBuffer[0];
+
+		if (randomValue <= moduloBiasThreshold) {
+			return randomValue % size;
+		}
+	}
+}
+
+function normaliseInterest(interest: string) {
+	return interest.trim().toLowerCase();
+}
+
+export default function SpinWheel({ currentUserId, currentUserInterests, people }: SpinWheelProps) {
 	const [rotation, setRotation] = useState(0);
-	const names = Array.from({ length: 8 }, (_, index) => ({
-		label: `Name ${index + 1}`,
-		angle: 22.5 + index * 45,
-		isOrangeSegment: index % 4 === 2,
-	})).map((name) => {
-		const radialTextAngle = name.angle - 90;
-		const readableTextAngle =
-			radialTextAngle > 90
-				? radialTextAngle - 180
-				: radialTextAngle < -90
-					? radialTextAngle + 180
-					: radialTextAngle;
+	const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
+	const [pendingSpinResult, setPendingSpinResult] = useState<SpinResult | null>(null);
+	const [isSpinning, setIsSpinning] = useState(false);
 
-		return { ...name, textRotation: readableTextAngle - name.angle };
-	});
+	const candidatePeople = useMemo(
+		() => people.filter((person) => person.id !== currentUserId),
+		[currentUserId, people],
+	);
+
+	const wheelSegments = useMemo(() => {
+		const segmentSize = 360 / candidatePeople.length;
+
+		return candidatePeople.map((person, index) => {
+			const angle = segmentSize / 2 + index * segmentSize;
+			const radialTextAngle = angle - 90;
+			const readableTextAngle =
+				radialTextAngle > 90
+					? radialTextAngle - 180
+					: radialTextAngle < -90
+						? radialTextAngle + 180
+						: radialTextAngle;
+
+			return {
+				...person,
+				angle,
+				isOrangeSegment: index % 4 === 2,
+				textRotation: readableTextAngle - angle,
+			};
+		});
+	}, [candidatePeople]);
 
 	function spinWheel() {
-		setRotation((currentRotation) => currentRotation + 1800 + Math.random() * 360);
+		if (wheelSegments.length === 0 || isSpinning) {
+			return;
+		}
+
+		const currentInterests = new Set(currentUserInterests.map(normaliseInterest));
+		const scoredPeople = wheelSegments.map((person) => {
+			const sharedInterests = person.interests.reduce((count, interest) => {
+				return currentInterests.has(normaliseInterest(interest)) ? count + 1 : count;
+			}, 0);
+
+			return { person, sharedInterests };
+		});
+
+		const bestSharedInterestCount = Math.max(...scoredPeople.map((score) => score.sharedInterests));
+		const topMatches = scoredPeople.filter(
+			(score) => score.sharedInterests === bestSharedInterestCount,
+		);
+		const winningCandidate = topMatches[getCryptographicRandomIndex(topMatches.length)];
+
+		setSpinResult(null);
+		setIsSpinning(true);
+
+		const turnsBeforeStop = 5;
+		setRotation((currentRotation) => {
+			const normalizedCurrentRotation = ((currentRotation % 360) + 360) % 360;
+			const targetStopRotation = (360 - winningCandidate.person.angle) % 360;
+			const finalTurnAmount =
+				turnsBeforeStop * 360 +
+				((targetStopRotation - normalizedCurrentRotation + 360) % 360);
+
+			return currentRotation + finalTurnAmount;
+		});
+
+		setPendingSpinResult({
+			name: winningCandidate.person.name,
+			sharedInterests: winningCandidate.sharedInterests,
+			wasTieBreak: topMatches.length > 1,
+		});
+	}
+
+	function handleWheelTransitionEnd(event: TransitionEvent<HTMLSpanElement>) {
+		if (event.propertyName !== "transform" || !isSpinning) {
+			return;
+		}
+
+		setSpinResult(pendingSpinResult);
+		setPendingSpinResult(null);
+		setIsSpinning(false);
 	}
 
 	return (
-		<button
-			type="button"
-			className="spin-wheel-control"
-			aria-label="Spin the meetup wheel preview"
-			aria-describedby="wheel-caption"
-			onClick={spinWheel}
-		>
-			<span className="spin-wheel-pointer" aria-hidden="true" />
-			<span
-				className="name-wheel"
-				aria-hidden="true"
-				style={{ transform: `rotate(${rotation}deg)` }}
+		<>
+			<button
+				type="button"
+				className="spin-wheel-control"
+				aria-label="Spin the meetup wheel"
+				aria-describedby="wheel-caption"
+				onClick={spinWheel}
+				disabled={isSpinning}
 			>
-				{names.map(({ label, angle, isOrangeSegment, textRotation }) => (
-					<span
-						key={label}
-						className={`wheel-name${isOrangeSegment ? " wheel-name--dark" : ""}`}
-						style={{
-							transform: `rotate(${angle}deg) translateY(-108px) rotate(${textRotation}deg) translate(-50%, -50%)`,
-						}}
-					>
-						{label}
-					</span>
-				))}
-				<span className="wheel-center">CC</span>
-			</span>
-		</button>
+				<span className="spin-wheel-pointer" aria-hidden="true" />
+				<span
+					className="name-wheel"
+					aria-hidden="true"
+					style={{ transform: `rotate(${rotation}deg)` }}
+					onTransitionEnd={handleWheelTransitionEnd}
+				>
+					{wheelSegments.map(({ id, name, angle, isOrangeSegment, textRotation }) => (
+						<span
+							key={id}
+							className={`wheel-name${isOrangeSegment ? " wheel-name--dark" : ""}`}
+							style={{
+								transform: `rotate(${angle}deg) translateY(-108px) rotate(${textRotation}deg) translate(-50%, -50%)`,
+							}}
+						>
+							{name}
+						</span>
+					))}
+					<span className="wheel-center">CC</span>
+				</span>
+			</button>
+			{spinResult && (
+				<p className="wheel-caption">
+					Matched with <strong>{spinResult.name}</strong> ({spinResult.sharedInterests} shared
+					 interest{spinResult.sharedInterests === 1 ? "" : "s"})
+					{spinResult.wasTieBreak ? " • tie broken with secure random selection" : ""}.
+				</p>
+			)}
+		</>
 	);
 }
