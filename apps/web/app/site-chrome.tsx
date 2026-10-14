@@ -37,7 +37,7 @@ export function SiteHeader({ activePage }: SiteHeaderProps) {
 					>
 						Personal
 					</Link>
-					<Link className="signup-link" href="/signup">
+					<Link className="signup-link" href="/login">
 						Sign up
 					</Link>
 				</nav>
