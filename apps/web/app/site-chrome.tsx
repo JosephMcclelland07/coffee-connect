@@ -1,12 +1,13 @@
 import Link from "next/link";
 
 type SiteHeaderProps = {
-	activePage: "home" | "meetups";
+	activePage: "home" | "meetups" | "personal";
 };
 
 export function SiteHeader({ activePage }: SiteHeaderProps) {
 	const isHome = activePage === "home";
 	const isMeetups = activePage === "meetups";
+	const isPersonal = activePage === "personal";
 
 	return (
 		<header className="site-header">
@@ -29,7 +30,11 @@ export function SiteHeader({ activePage }: SiteHeaderProps) {
 					>
 						Meetups
 					</Link>
-					<Link className="nav-link" href={isMeetups ? "#personal" : "/meetups#personal"}>
+					<Link
+						className="nav-link"
+						href={isPersonal ? "#personal" : "/personal"}
+						aria-current={isPersonal ? "page" : undefined}
+					>
 						Personal
 					</Link>
 					<Link className="signup-link" href="/signup">
