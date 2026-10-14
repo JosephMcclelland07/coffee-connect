@@ -550,6 +550,16 @@ h2,
 	animation: enter 480ms ease-out both;
 }
 
+.profile-setup-header {
+	display: flex;
+	min-height: 78px;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid var(--line);
+	color: var(--muted);
+	font-size: 13px;
+}
+
 .personal-page-heading {
 	max-width: 720px;
 	margin-bottom: 42px;
@@ -928,6 +938,10 @@ h2,
 	.personal-page {
 		padding-top: 44px;
 		padding-bottom: 64px;
+	}
+
+	.profile-setup-header {
+		min-height: 64px;
 	}
 
 	.personal-page-heading {

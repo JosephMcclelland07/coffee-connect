@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-
-const STORAGE_KEY = "coffee-connect.interests.v1";
+import { useRouter } from "next/navigation";
+import { PROFILE_SETUP_PENDING_KEY, PROFILE_STORAGE_KEY } from "../lib/profile-flow";
 const MAX_INTERESTS = 3;
 
 const SUGGESTED_INTERESTS = [
@@ -28,9 +28,15 @@ type SavedInterestProfile = {
 	officeDays: string[];
 	availableFrom: string;
 	availableUntil: string;
+	profileComplete: boolean;
 };
 
-export default function InterestProfile() {
+type InterestProfileProps = {
+	mode?: "setup" | "edit";
+};
+
+export default function InterestProfile({ mode = "edit" }: InterestProfileProps) {
+	const router = useRouter();
 	const [interests, setInterests] = useState<string[]>([]);
 	const [customInterests, setCustomInterests] = useState<string[]>([]);
 	const [officeDays, setOfficeDays] = useState<string[]>([]);
@@ -42,7 +48,12 @@ export default function InterestProfile() {
 
 	useEffect(() => {
 		try {
-			const savedProfile = window.localStorage.getItem(STORAGE_KEY);
+			if (mode === "setup" && window.localStorage.getItem(PROFILE_SETUP_PENDING_KEY) !== "true") {
+				router.replace("/login");
+				return;
+			}
+
+			const savedProfile = window.localStorage.getItem(PROFILE_STORAGE_KEY);
 			if (savedProfile) {
 				const parsed = JSON.parse(savedProfile) as Partial<SavedInterestProfile>;
 				if (Array.isArray(parsed.interests)) {
@@ -66,7 +77,7 @@ export default function InterestProfile() {
 		} finally {
 			setIsLoaded(true);
 		}
-	}, []);
+	}, [mode, router]);
 
 	function toggleInterest(interest: string) {
 		if (!interests.includes(interest) && interests.length >= MAX_INTERESTS) {
@@ -115,6 +126,10 @@ export default function InterestProfile() {
 
 	function saveProfile(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
+		if (mode === "setup" && interests.length === 0) {
+			setStatusMessage("Choose at least one interest to finish your profile.");
+			return;
+		}
 
 		if (Boolean(availableFrom) !== Boolean(availableUntil)) {
 			setStatusMessage("Enter both available times, or leave both blank.");
@@ -131,11 +146,17 @@ export default function InterestProfile() {
 			officeDays,
 			availableFrom,
 			availableUntil,
+			profileComplete: interests.length > 0,
 		};
 
 		try {
-			window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-			setStatusMessage("Profile saved in this browser. Calendar syncing can be connected later.");
+			window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+			if (mode === "setup") {
+				window.localStorage.removeItem(PROFILE_SETUP_PENDING_KEY);
+				router.push("/meetups");
+			} else {
+				setStatusMessage("Profile saved in this browser. Calendar syncing can be connected later.");
+			}
 		} catch {
 			setStatusMessage("Interests could not be saved in this browser.");
 		}
@@ -258,7 +279,7 @@ export default function InterestProfile() {
 					{statusMessage || `${interests.length} of ${MAX_INTERESTS} interests selected`}
 				</p>
 				<button className="button-primary" type="submit" disabled={!isLoaded}>
-					Save interests
+					{mode === "setup" ? "Save and continue" : "Save interests"}
 				</button>
 			</footer>
 		</form>

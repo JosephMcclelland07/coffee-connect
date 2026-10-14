@@ -1,3 +1,4 @@
+import Link from "next/link";
 import styles from "./login.module.css";
 
 export default function LoginPage() {
@@ -44,6 +45,9 @@ export default function LoginPage() {
 							Log in
 						</button>
 					</form>
+					<Link className={styles.signupLink} href="/signup">
+						Not a member? Sign up!
+					</Link>
 				</div>
 			</section>
 		</main>
