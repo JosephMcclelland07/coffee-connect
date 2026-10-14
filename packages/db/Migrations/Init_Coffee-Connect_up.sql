@@ -34,7 +34,21 @@ CREATE TABLE IF NOT EXISTS `Match` (
     MatchDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     MatchType VARCHAR(50) NOT NULL,
     MatchStatus VARCHAR(50) NOT NULL,
-    GeneratedByWheelSpin BOOLEAN NOT NULL DEFAULT FALSE
+    GeneratedByWheelSpin BOOLEAN NOT NULL DEFAULT FALSE,
+    EmployeeOneID INT NOT NULL,
+    EmployeeTwoID INT NOT NULL,
+
+    CONSTRAINT FK_Match_EmployeeOne
+        FOREIGN KEY (EmployeeOneID)
+        REFERENCES Employee(EmployeeID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT FK_Match_EmployeeTwo
+        FOREIGN KEY (EmployeeTwoID)
+        REFERENCES Employee(EmployeeID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 /* ==========================================
@@ -77,31 +91,6 @@ CREATE TABLE IF NOT EXISTS Notification (
         REFERENCES Employee(EmployeeID)
         ON DELETE CASCADE
         ON UPDATE CASCADE
-);
-
-/* ==========================================
-   MATCH_PARTICIPANT
-   Junction Table
-   ========================================== */
-CREATE TABLE IF NOT EXISTS Match_Participant (
-    MatchParticipantID INT AUTO_INCREMENT PRIMARY KEY,
-    MatchID INT NOT NULL,
-    EmployeeID INT NOT NULL,
-
-    CONSTRAINT FK_MatchParticipant_Match
-        FOREIGN KEY (MatchID)
-        REFERENCES `Match`(MatchID)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT FK_MatchParticipant_Employee
-        FOREIGN KEY (EmployeeID)
-        REFERENCES Employee(EmployeeID)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT UQ_Match_Employee
-        UNIQUE (MatchID, EmployeeID)
 );
 
 /* ==========================================
@@ -151,11 +140,11 @@ CREATE INDEX IX_Employee_Email
 CREATE INDEX IX_Notification_EmployeeID
     ON Notification (EmployeeID);
 
-CREATE INDEX IX_MatchParticipant_MatchID
-    ON Match_Participant (MatchID);
+CREATE INDEX IX_Match_EmployeeOneID
+    ON `Match` (EmployeeOneID);
 
-CREATE INDEX IX_MatchParticipant_EmployeeID
-    ON Match_Participant (EmployeeID);
+CREATE INDEX IX_Match_EmployeeTwoID
+    ON `Match` (EmployeeTwoID);
 
 CREATE INDEX IX_Meeting_MatchID
     ON Meeting (MatchID);
