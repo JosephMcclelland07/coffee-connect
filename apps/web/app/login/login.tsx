@@ -19,7 +19,7 @@ export default function LoginPage() {
 					<p className={styles.kicker}>YOUR ACCOUNT</p>
 					<h1 id="login-title">Log in</h1>
 					<p className={styles.intro}>Welcome back. Sign in to continue.</p>
-					<form className={styles.form}>
+					<form className={styles.form} method="post">
 						<label className={styles.field}>
 							Email
 							<input
@@ -40,6 +40,9 @@ export default function LoginPage() {
 								required
 							/>
 						</label>
+						<button className={styles.submitButton} type="submit">
+							Log in
+						</button>
 					</form>
 				</div>
 			</section>
