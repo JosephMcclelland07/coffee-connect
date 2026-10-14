@@ -4,7 +4,55 @@ import { SiteFooter, SiteHeader } from "../site-chrome";
 import SpinWheel from "../../components/spin-wheel";
 import MeetupChat from "../../components/meetup-chat";
 
-	const validAuthRoles = new Set(["employee", "hr_admin"]);
+const validAuthRoles = new Set(["employee", "hr_admin"]);
+
+const demoPeople = [
+	{
+		id: "employee-1",
+		name: "Jordan Lee",
+		interests: ["Hiking", "Board games", "AI", "Coffee"],
+	},
+	{
+		id: "employee-2",
+		name: "Priya Shah",
+		interests: ["Running", "Travel", "Coffee", "Design"],
+	},
+	{
+		id: "employee-3",
+		name: "Sam Osei",
+		interests: ["AI", "Travel", "Cooking", "Coffee"],
+	},
+	{
+		id: "employee-4",
+		name: "Alex Chen",
+		interests: ["Photography", "Travel", "Hiking", "Film"],
+	},
+	{
+		id: "employee-5",
+		name: "Maya Patel",
+		interests: ["Books", "Yoga", "Cooking", "Design"],
+	},
+	{
+		id: "employee-6",
+		name: "Chris Morgan",
+		interests: ["Music", "Football", "Podcasts", "Coffee"],
+	},
+	{
+		id: "employee-7",
+		name: "Nina Rossi",
+		interests: ["Cycling", "AI", "Travel", "Books"],
+	},
+	{
+		id: "employee-8",
+		name: "Leo Turner",
+		interests: ["Gaming", "Board games", "Film", "Cooking"],
+	},
+	{
+		id: "employee-9",
+		name: "You",
+		interests: ["Coffee", "AI", "Travel", "Board games"],
+	},
+];
 
 const demoMeetup = {
 	otherPersonName: "Jordan Lee",
@@ -33,6 +81,9 @@ export default async function MeetupsPage() {
 	const userRole = requestHeaders.get("x-user-role");
 	const isLoggedIn = Boolean(userId && userRole && validAuthRoles.has(userRole));
 
+	const currentUser = demoPeople.find((person) => person.id === userId) ?? demoPeople[demoPeople.length - 1];
+	const wheelPeople = demoPeople.filter((person) => person.id !== currentUser.id);
+
 	return (
 		<>
 			<SiteHeader activePage="meetups" />
@@ -54,9 +105,14 @@ export default async function MeetupsPage() {
 								</Link>
 							</div>
 							<div className="wheel-panel">
-								<SpinWheel />
+								<SpinWheel
+									currentUserId={currentUser.id}
+									currentUserInterests={currentUser.interests}
+									people={[currentUser, ...wheelPeople]}
+								/>
 								<p className="wheel-caption" id="wheel-caption">
-									Click the wheel to spin a preview. Names will be added later.
+									Rigged to stop on the person with the most shared interests. If top
+									matches tie, the winner is selected with secure randomness.
 								</p>
 							</div>
 						</div>
