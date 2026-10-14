@@ -20,7 +20,7 @@ const demoPeople = [
 	{
 		id: "employee-3",
 		name: "Sam Osei",
-		interests: ["AI", "Podcasts", "Cooking", "Coffee"],
+		interests: ["AI", "Travel", "Cooking", "Coffee"],
 	},
 	{
 		id: "employee-4",
