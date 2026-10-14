@@ -1,5 +1,9 @@
 # coffee-connect
 
+# Setup script
+npm run db:setup
+
+
 Monorepo structure for a Coffee Connect platform using:
 
 - `apps/web` → Next.js (React) frontend
