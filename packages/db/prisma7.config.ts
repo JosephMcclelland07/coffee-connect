@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "prisma/config";
 
-loadEnv({ path: resolve(dirname(fileURLToPath(import.meta.url)), "../../.env") });
+loadEnv({ path: resolve(dirname(fileURLToPath(import.meta.url)), ".env") });
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -15,4 +15,3 @@ export default defineConfig({
     url: process.env["DATABASE_URL"],
   },
 });
- 

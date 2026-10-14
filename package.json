@@ -10,6 +10,7 @@
     "dev:web": "npm run dev -w apps/web",
     "dev:api": "npm run dev -w apps/api",
     "dev": "npm run dev:web",
+    "db:setup": "bash scripts/db-setup.sh",
     "build": "npm run build -ws",
     "lint": "npm run lint -ws --if-present",
     "test": "npm run test -ws --if-present"
