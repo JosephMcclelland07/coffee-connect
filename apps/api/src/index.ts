@@ -1,5 +1,6 @@
 import express from "express";
 import { AppError } from "./lib/AppError";
+import { prisma } from "./lib/prisma";
 import { authContextMiddleware, requireAuth } from "./middleware/auth";
 import { corsMiddleware } from "./middleware/cors";
 import { errorHandlerMiddleware } from "./middleware/errorHandler";
@@ -78,18 +79,135 @@ const validateCreateEmployee = validateBody((input) => {
   };
 });
 
-// Example protected admin route shape for your Employee table flow.
-app.post("/employees", requireAuth, requireRole("hr_admin"), validateCreateEmployee, async (req, res, next) => {
-  try {
-    // TODO: Persist with Prisma once API <-> DB package wiring is completed.
-    res.status(201).json({
-      employee: req.body,
-      createdBy: req.user?.id,
-      requestId: req.requestId,
-    });
-  } catch (error) {
-    next(error);
+app.get("/employees", requireAuth, requireRole("hr_admin"), async (req, res) => {
+  const employees = await prisma.employee.findMany({
+    orderBy: { employeeId: "asc" },
+  });
+
+  res.json({ employees, requestId: req.requestId });
+});
+
+app.get("/interests", requireAuth, requireRole("hr_admin"), async (req, res) => {
+  const interests = await prisma.interest.findMany({
+    include: {
+      employees: {
+        include: {
+          employee: {
+            select: { employeeId: true, firstName: true, lastName: true, email: true },
+          },
+        },
+      },
+    },
+    orderBy: { interestId: "asc" },
+    take: 100,
+  });
+
+  res.json({ interests, requestId: req.requestId });
+});
+
+app.get("/matches", requireAuth, requireRole("hr_admin"), async (req, res) => {
+  const matches = await prisma.match.findMany({
+    include: {
+      employeeOne: {
+        select: { employeeId: true, firstName: true, lastName: true, email: true },
+      },
+      employeeTwo: {
+        select: { employeeId: true, firstName: true, lastName: true, email: true },
+      },
+      meetings: true,
+    },
+    orderBy: { matchId: "asc" },
+    take: 100,
+  });
+
+  res.json({ matches, requestId: req.requestId });
+});
+
+app.get("/employee-interests", requireAuth, requireRole("hr_admin"), async (req, res) => {
+  const employeeInterests = await prisma.employeeInterest.findMany({
+    include: {
+      employee: {
+        select: { employeeId: true, firstName: true, lastName: true, email: true },
+      },
+      interest: true,
+    },
+    orderBy: { employeeInterestId: "asc" },
+    take: 100,
+  });
+
+  res.json({ employeeInterests, requestId: req.requestId });
+});
+
+app.get("/notifications", requireAuth, requireRole("hr_admin"), async (req, res) => {
+  const notifications = await prisma.notification.findMany({
+    include: {
+      employee: {
+        select: { employeeId: true, firstName: true, lastName: true, email: true },
+      },
+    },
+    orderBy: { notificationId: "asc" },
+    take: 100,
+  });
+
+  res.json({ notifications, requestId: req.requestId });
+});
+
+app.get("/hr-administrators", requireAuth, requireRole("hr_admin"), async (req, res) => {
+  const administrators = await prisma.hRAdministrator.findMany({
+    include: {
+      employee: {
+        select: { employeeId: true, firstName: true, lastName: true, email: true },
+      },
+    },
+    orderBy: { adminId: "asc" },
+    take: 100,
+  });
+
+  res.json({ administrators, requestId: req.requestId });
+});
+
+app.get("/meetings", requireAuth, requireRole("hr_admin"), async (req, res) => {
+  const meetings = await prisma.meeting.findMany({
+    include: {
+      match: {
+        include: {
+          employeeOne: {
+            select: { employeeId: true, firstName: true, lastName: true, email: true },
+          },
+          employeeTwo: {
+            select: { employeeId: true, firstName: true, lastName: true, email: true },
+          },
+        },
+      },
+    },
+    orderBy: { meetingId: "asc" },
+    take: 100,
+  });
+
+  res.json({ meetings, requestId: req.requestId });
+});
+
+app.get("/employees/:employeeId", requireAuth, requireRole("hr_admin"), async (req, res) => {
+  const employeeId = Number(req.params.employeeId);
+  if (!Number.isSafeInteger(employeeId) || employeeId < 1) {
+    throw new AppError(400, "employeeId must be a positive integer.");
   }
+
+  const employee = await prisma.employee.findUnique({ where: { employeeId } });
+  if (!employee) {
+    throw new AppError(404, "Employee not found.");
+  }
+
+  res.json({ employee, requestId: req.requestId });
+});
+
+app.post("/employees", requireAuth, requireRole("hr_admin"), validateCreateEmployee, async (req, res) => {
+  const employee = await prisma.employee.create({ data: req.body });
+  res.status(201).json({
+    employee,
+    createdBy: req.user?.id,
+    requestId: req.requestId,
+  });
 });
 
 // Throwing AppError demonstrates controlled error response format.

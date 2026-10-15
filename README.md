@@ -39,10 +39,13 @@ coffee-connect/
 
 ## Notes
 
-- This is **structure only** (no new dependencies installed).
-- Existing Express setup was moved from root into `apps/api`.
-- Run workspace installs later from repo root when ready:
+- The Express API is in `apps/api`, with Prisma database access provided by `packages/db`'s generated client.
+- Run workspace installs from the repository root when ready:
 
 ```bash
 npm install
 ```
+
+## API requests
+
+The API's database-backed employee request examples are in [`apps/api/requests.http`](./apps/api/requests.http). Start MySQL and apply the database setup with `npm run db:setup`, then run `npm run dev:api` and execute the requests from that file in an HTTP client such as the VS Code REST Client extension. The API reads `DATABASE_URL` from the root `.env`, `packages/db/.env`, or the process environment.

@@ -1,0 +1,81 @@
+@baseUrl = http://localhost:4000
+@adminUserId = 2
+@employeeId = 1
+
+### Health check
+GET {{baseUrl}}/health
+
+### Authenticated user context
+GET {{baseUrl}}/me
+x-user-id: {{adminUserId}}
+x-user-role: hr_admin
+
+### List employees from the database (HR admin)
+GET {{baseUrl}}/employees
+x-user-id: {{adminUserId}}
+x-user-role: hr_admin
+
+### List interests and associated employees from the database (HR admin)
+GET {{baseUrl}}/interests
+x-user-id: {{adminUserId}}
+x-user-role: hr_admin
+
+### List matches with both employees and any meetings (HR admin)
+GET {{baseUrl}}/matches
+x-user-id: {{adminUserId}}
+x-user-role: hr_admin
+
+### List employee-interest links with employee and interest details (HR admin)
+GET {{baseUrl}}/employee-interests
+x-user-id: {{adminUserId}}
+x-user-role: hr_admin
+
+### List notifications and their employees (HR admin)
+GET {{baseUrl}}/notifications
+x-user-id: {{adminUserId}}
+x-user-role: hr_admin
+
+### List HR administrators and their employee records (HR admin)
+GET {{baseUrl}}/hr-administrators
+x-user-id: {{adminUserId}}
+x-user-role: hr_admin
+
+### List meetings with matches and both matched employees (HR admin)
+GET {{baseUrl}}/meetings
+x-user-id: {{adminUserId}}
+x-user-role: hr_admin
+
+### Get one employee from the database (HR admin)
+GET {{baseUrl}}/employees/{{employeeId}}
+x-user-id: {{adminUserId}}
+x-user-role: hr_admin
+
+### Verify unauthenticated database access is rejected (expected 401)
+GET {{baseUrl}}/employees
+
+### Verify employee-role database access is rejected (expected 403)
+GET {{baseUrl}}/employees
+x-user-id: {{employeeId}}
+x-user-role: employee
+
+### Verify malformed employee IDs are rejected (expected 400)
+GET {{baseUrl}}/employees/not-a-number
+x-user-id: {{adminUserId}}
+x-user-role: hr_admin
+
+### Verify missing employee IDs return not found (expected 404)
+GET {{baseUrl}}/employees/2147483647
+x-user-id: {{adminUserId}}
+x-user-role: hr_admin
+
+### Create an employee in the database (HR admin)
+POST {{baseUrl}}/employees
+Content-Type: application/json
+x-user-id: {{adminUserId}}
+x-user-role: hr_admin
+
+{
+  "firstName": "API",
+  "lastName": "Test",
+  "email": "api-test-{{$guid}}@example.com"
+}
