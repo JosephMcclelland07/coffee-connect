@@ -18,6 +18,12 @@ const SUGGESTED_INTERESTS = [
 	"Fitness & sports",
 	"Photography",
 	"Travel",
+	"Gardening",
+	"Volunteering",
+	"Running",
+	"Technology & AI",
+	"Crafts & DIY",
+	"Pets & animals",
 ];
 
 const OFFICE_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];

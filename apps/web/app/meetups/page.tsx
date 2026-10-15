@@ -75,6 +75,27 @@ const demoMeetup = {
 	],
 };
 
+const demoPreviousMeetups = [
+	{
+		id: "past-1",
+		personName: "Maya Patel",
+		date: "Saturday, 12 September 2026",
+		location: "Greenhouse Cafe",
+	},
+	{
+		id: "past-2",
+		personName: "Chris Morgan",
+		date: "Saturday, 15 August 2026",
+		location: "Northstar Coffee",
+	},
+	{
+		id: "past-3",
+		personName: "Priya Shah",
+		date: "Saturday, 18 July 2026",
+		location: "Corner Cup",
+	},
+];
+
 export default async function MeetupsPage() {
 	const requestHeaders = await headers();
 	const userId = requestHeaders.get("x-user-id");
@@ -151,6 +172,35 @@ export default async function MeetupsPage() {
 								initialMessages={demoMeetup.messages}
 							/>
 						</div>
+					</div>
+				</section>
+
+				<section className="previous-section" id="previous-meetups">
+					<div className="page-width">
+						<div className="upcoming-heading">
+							<p className="eyebrow">Your history</p>
+							<h2>Previous meetups</h2>
+						</div>
+						<ul className="previous-meetups-list">
+							{demoPreviousMeetups.map((meetup) => (
+								<li className="previous-meetup" key={meetup.id}>
+									<div>
+										<p className="eyebrow">Completed</p>
+										<h3>{meetup.personName}</h3>
+									</div>
+									<dl className="previous-meetup-facts">
+										<div>
+											<dt>Date</dt>
+											<dd>{meetup.date}</dd>
+										</div>
+										<div>
+											<dt>Location</dt>
+											<dd>{meetup.location}</dd>
+										</div>
+									</dl>
+								</li>
+							))}
+						</ul>
 					</div>
 				</section>
 

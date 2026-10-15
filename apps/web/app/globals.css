@@ -361,9 +361,61 @@ h2,
 	background: var(--soft);
 }
 
+.previous-section {
+	padding: 56px 0 72px;
+	background: var(--paper);
+}
+
 .upcoming-heading {
 	margin-bottom: 28px;
 	animation: enter 480ms 120ms ease-out both;
+}
+
+.previous-meetups-list {
+	margin: 0;
+	padding: 0;
+	border-top: 1px solid var(--line);
+	list-style: none;
+}
+
+.previous-meetup {
+	display: grid;
+	grid-template-columns: minmax(180px, 0.7fr) minmax(0, 1.3fr);
+	gap: 28px;
+	align-items: center;
+	padding: 22px 0;
+	border-bottom: 1px solid var(--line);
+}
+
+.previous-meetup .eyebrow {
+	margin-bottom: 6px;
+}
+
+.previous-meetup h3 {
+	margin: 0;
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 22px;
+	font-weight: 500;
+}
+
+.previous-meetup-facts {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px 24px;
+	margin: 0;
+}
+
+.previous-meetup-facts dt {
+	margin-bottom: 5px;
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.previous-meetup-facts dd {
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.5;
 }
 
 .upcoming-meetup {
@@ -1022,6 +1074,11 @@ h2,
 	.upcoming-meetup {
 		grid-template-columns: 1fr;
 		gap: 28px;
+	}
+
+	.previous-meetup {
+		grid-template-columns: 1fr;
+		gap: 16px;
 	}
 
 	.meetup-person-name {
