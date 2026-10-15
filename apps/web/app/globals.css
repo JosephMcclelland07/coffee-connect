@@ -42,8 +42,9 @@ a:focus-visible {
 }
 
 .site-header {
-	position: relative;
-	z-index: 1;
+	position: sticky;
+	top: 0;
+	z-index: 10;
 	background: var(--paper);
 	border-bottom: 1px solid var(--line);
 }
@@ -106,7 +107,8 @@ a:focus-visible {
 
 .hero-copy {
 	max-width: 760px;
-	margin-bottom: 30px;
+	margin: 0 auto 30px;
+	text-align: center;
 	animation: enter 480ms ease-out both;
 }
 
@@ -139,14 +141,14 @@ h2,
 
 .hero h1 {
 	max-width: 700px;
-	margin-bottom: 14px;
+	margin: 0 auto 14px;
 	font-size: 56px;
 	line-height: 1.08;
 }
 
 .hero-description {
 	max-width: 540px;
-	margin-bottom: 22px;
+	margin: 0 auto 22px;
 	color: var(--muted);
 	font-size: 18px;
 	line-height: 1.55;
@@ -198,9 +200,9 @@ h2,
 
 .meetups-layout {
 	display: grid;
-	grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
-	gap: clamp(40px, 7vw, 100px);
-	align-items: center;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 28px;
+	justify-items: center;
 }
 
 .meetup-page-heading {
@@ -208,6 +210,8 @@ h2,
 }
 
 .meetups-overview {
+	width: min(100%, 760px);
+	text-align: center;
 	animation: enter 520ms 60ms ease-out both;
 }
 
@@ -242,31 +246,34 @@ h2,
 }
 
 .meetups-overview > p {
-	max-width: 460px;
+	max-width: 700px;
+	margin-right: auto;
+	margin-left: auto;
 	margin-bottom: 24px;
 }
 
 .wheel-panel {
 	display: flex;
-	min-height: 440px;
+	width: min(100%, 760px);
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: 20px;
-	padding: 32px;
+	gap: 16px;
+	padding: 24px;
 	background: #ffffff;
 }
 
 .spin-wheel-control {
 	position: relative;
 	display: block;
-	width: min(100%, 340px);
+	width: min(100%, 460px);
 	aspect-ratio: 1;
 	padding: 0;
 	border: 0;
 	border-radius: 50%;
 	background: transparent;
 	cursor: pointer;
+	container-type: inline-size;
 }
 
 .spin-wheel-control:focus-visible {
@@ -380,7 +387,6 @@ h2,
 .previous-meetups-list {
 	margin: 0;
 	padding: 0;
-	border-top: 1px solid var(--line);
 	list-style: none;
 }
 
@@ -389,13 +395,20 @@ h2,
 	grid-template-columns: minmax(180px, 0.7fr) minmax(0, 1.3fr);
 	gap: 28px;
 	align-items: center;
-	padding: 22px 0;
-	border-bottom: 1px solid var(--line);
+	margin-bottom: 12px;
+	padding: 22px;
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.previous-meetup:hover {
+	border-color: var(--green);
+	background: var(--soft);
 }
 
 .previous-meetup .eyebrow {
 	margin-bottom: 6px;
-	font-style: italic;
 	letter-spacing: 0;
 	text-transform: none;
 }
@@ -890,6 +903,9 @@ h2,
 
 .steps-section .section-heading {
 	margin-bottom: 42px;
+	margin-right: auto;
+	margin-left: auto;
+	text-align: center;
 }
 
 .steps-section .eyebrow {
@@ -904,16 +920,35 @@ h2,
 
 .step-item {
 	min-width: 0;
-	padding-top: 20px;
-	border-top: 1px solid var(--line);
+	padding: 20px;
+	border: 1px solid transparent;
+	border-top-color: var(--line);
+	border-radius: 4px;
+	transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.step-item:hover {
+	border-color: var(--green);
+	background: var(--soft);
 }
 
 .step-number {
-	display: block;
+	display: grid;
+	width: 48px;
+	height: 40px;
+	place-items: center;
 	margin-bottom: 25px;
+	border: 1px solid transparent;
+	background: var(--soft);
 	color: var(--green);
 	font-family: var(--font-sans);
 	font-size: 20px;
+	transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.step-item:hover .step-number {
+	border-color: var(--green);
+	background: #fff1d9;
 }
 
 .step-item h3 {
