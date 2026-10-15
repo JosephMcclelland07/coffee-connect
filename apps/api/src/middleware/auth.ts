@@ -1,35 +1,21 @@
 import type { RequestHandler } from "express";
 import { AppError } from "../lib/AppError";
-import type { AppRole } from "../types/auth";
+import { verifyToken } from "../lib/tokens";
 
-const VALID_ROLES: AppRole[] = ["employee", "hr_admin"];
-
-/**
- * Authentication stub.
- *
- * Reads user context from headers so the app can be exercised before real auth
- * integration (JWT/session/SSO). Replace this with token verification in prod.
- */
 export const authContextMiddleware: RequestHandler = (req, _res, next) => {
-  const userId = req.header("x-user-id");
-  const userRole = req.header("x-user-role");
-
-  if (!userId || !userRole) {
+  const authorization = req.header("authorization");
+  if (!authorization) {
     next();
     return;
   }
-
-  if (!VALID_ROLES.includes(userRole as AppRole)) {
-    next(new AppError(400, `Invalid role '${userRole}'.`));
-    return;
+  const match = /^Bearer ([^\s]+)$/i.exec(authorization);
+  try {
+    if (!match) throw new Error("Invalid authorization header.");
+    req.user = verifyToken(match[1]);
+    next();
+  } catch {
+    next(new AppError(401, "Invalid or expired token."));
   }
-
-  req.user = {
-    id: userId,
-    role: userRole as AppRole,
-  };
-
-  next();
 };
 
 /**

@@ -12,6 +12,7 @@
     "dev": "npm run dev:web",
     "build": "npm run build -ws",
     "lint": "npm run lint -ws --if-present",
-    "test": "npm run test -ws --if-present"
+    "test": "npm run test -ws --if-present",
+    "db:setup": "bash scripts/db-setup.sh"
   }
 }

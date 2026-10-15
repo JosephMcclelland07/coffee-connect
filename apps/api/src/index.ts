@@ -9,12 +9,13 @@ import { createRateLimitMiddleware } from "./middleware/rateLimit";
 import { requestIdMiddleware } from "./middleware/requestId";
 import { requireRole } from "./middleware/requireRole";
 import { validateBody } from "./middleware/validate";
+import { authRouter } from "./routes/auth";
+import { database } from "./lib/database";
 
 const app = express();
 const port = Number(process.env.PORT) || 4000;
 
-// If deployed behind a proxy/load balancer, this helps express derive req.ip correctly.
-app.set("trust proxy", true);
+app.set("trust proxy", false);
 
 // 1) Attach correlation ID first so all downstream logs/errors include it.
 app.use(requestIdMiddleware);
@@ -34,17 +35,31 @@ app.use(authContextMiddleware);
 
 // 6) Basic rate limiting for all API routes.
 app.use(createRateLimitMiddleware({ windowMs: 60_000, max: 120 }));
+app.use("/auth", authRouter);
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "api" });
 });
 
-app.get("/me", requireAuth, (req, res) => {
-  res.json({
-    id: req.user?.id,
-    role: req.user?.role,
-    requestId: req.requestId,
-  });
+app.get("/me", requireAuth, async (req, res, next) => {
+  try {
+    const employee = await database.employee.findUnique({
+      where: { employeeId: Number(req.user!.id) },
+      select: { employeeId: true, firstName: true, lastName: true, email: true, isActive: true },
+    });
+    if (!employee?.isActive) throw new AppError(401, "Account unavailable.");
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      account: {
+        id: employee.employeeId,
+        name: `${employee.firstName} ${employee.lastName}`.trim(),
+        email: employee.email,
+      },
+      role: req.user!.role,
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 const validateCreateEmployee = validateBody((input) => {
