@@ -149,7 +149,7 @@ export default function SpinWheel({ currentUserId, currentUserInterests, people 
 							key={id}
 							className={`wheel-name${isOrangeSegment ? " wheel-name--dark" : ""}`}
 							style={{
-								transform: `rotate(${angle}deg) translateY(-108px) rotate(${textRotation}deg) translate(-50%, -50%)`,
+								transform: `rotate(${angle}deg) translateY(-31cqw) rotate(${textRotation}deg) translate(-50%, -50%)`,
 							}}
 						>
 							{name}
