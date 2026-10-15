@@ -7,6 +7,7 @@
 	--red: #c92f2b;
 	--red-dark: #a92120;
 	--green: #e78b0b;
+	--font-sans: "Avenir Next", "Gill Sans", sans-serif;
 }
 
 * {
@@ -21,7 +22,7 @@ body {
 	margin: 0;
 	background: var(--paper);
 	color: var(--ink);
-	font-family: "Avenir Next", "Gill Sans", sans-serif;
+	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 }
 
@@ -57,7 +58,7 @@ a:focus-visible {
 
 .wordmark {
 	flex: 0 0 auto;
-	font-family: Georgia, "Times New Roman", serif;
+	font-family: var(--font-sans);
 	font-size: 22px;
 	font-weight: 700;
 }
@@ -132,7 +133,7 @@ p {
 h1,
 h2,
 .join-section h2 {
-	font-family: Georgia, "Times New Roman", serif;
+	font-family: var(--font-sans);
 	font-weight: 500;
 }
 
@@ -228,7 +229,7 @@ h2,
 .meetups-overview h2,
 .step-item h3 {
 	margin-bottom: 12px;
-	font-family: Georgia, "Times New Roman", serif;
+	font-family: var(--font-sans);
 	font-size: 25px;
 	font-weight: 500;
 }
@@ -341,7 +342,7 @@ h2,
 	border-radius: 50%;
 	background: var(--paper);
 	color: var(--green);
-	font-family: Georgia, "Times New Roman", serif;
+	font-family: var(--font-sans);
 	font-size: 24px;
 	font-weight: 700;
 	transform: translate(-50%, -50%);
@@ -364,6 +365,11 @@ h2,
 .previous-section {
 	padding: 56px 0 72px;
 	background: var(--paper);
+}
+
+.previous-section .upcoming-heading h2 {
+	font-size: 30px;
+	font-weight: 700;
 }
 
 .upcoming-heading {
@@ -389,13 +395,15 @@ h2,
 
 .previous-meetup .eyebrow {
 	margin-bottom: 6px;
+	font-style: italic;
+	letter-spacing: 0;
+	text-transform: none;
 }
 
 .previous-meetup h3 {
 	margin: 0;
-	font-family: Georgia, "Times New Roman", serif;
-	font-size: 22px;
-	font-weight: 500;
+	font-size: 20px;
+	font-weight: 700;
 }
 
 .previous-meetup-facts {
@@ -432,7 +440,7 @@ h2,
 
 .meetup-person-name {
 	margin: 0 0 24px;
-	font-family: Georgia, "Times New Roman", serif;
+	font-family: var(--font-sans);
 	font-size: 32px;
 	font-weight: 500;
 }
@@ -483,7 +491,7 @@ h2,
 
 .meetup-chat-header h3 {
 	margin: 0;
-	font-family: Georgia, "Times New Roman", serif;
+	font-family: var(--font-sans);
 	font-size: 20px;
 	font-weight: 500;
 }
@@ -580,7 +588,7 @@ h2,
 .meetups-join h2 {
 	max-width: 620px;
 	margin-bottom: 0;
-	font-family: Georgia, "Times New Roman", serif;
+	font-family: var(--font-sans);
 	font-size: 32px;
 	font-weight: 500;
 }
@@ -646,7 +654,7 @@ h2,
 .availability-fieldset legend {
 	width: 100%;
 	padding: 0;
-	font-family: Georgia, "Times New Roman", serif;
+	font-family: var(--font-sans);
 	font-size: 24px;
 }
 
@@ -746,7 +754,7 @@ h2,
 
 .availability-hours h2 {
 	margin-bottom: 8px;
-	font-family: Georgia, "Times New Roman", serif;
+	font-family: var(--font-sans);
 	font-size: 24px;
 	font-weight: 500;
 }
@@ -904,7 +912,7 @@ h2,
 	display: block;
 	margin-bottom: 25px;
 	color: var(--green);
-	font-family: Georgia, "Times New Roman", serif;
+	font-family: var(--font-sans);
 	font-size: 20px;
 }
 
