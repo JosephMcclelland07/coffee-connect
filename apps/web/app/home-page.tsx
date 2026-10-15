@@ -11,7 +11,7 @@ export default function HomePage() {
 				<section className="hero page-width" id="home">
 					<div className="hero-copy">
 						<p className="eyebrow">Good coffee. Good company.</p>
-						<h1>Welcome to Coffee Connect!</h1>
+						<h1>Welcome to Coffee Connect! ☕</h1>
 						<p className="hero-description">
 							Find your next favourite conversation, one cup at a time.
 						</p>

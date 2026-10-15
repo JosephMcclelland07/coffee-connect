@@ -27,10 +27,12 @@ const SUGGESTED_INTERESTS = [
 ];
 
 const OFFICE_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const OFFICE_LOCATIONS = ["Belfast", "Bristol", "London", "Dublin"];
 
 type SavedInterestProfile = {
 	interests: string[];
 	customInterests: string[];
+	officeLocation: string;
 	officeDays: string[];
 	availableFrom: string;
 	availableUntil: string;
@@ -45,6 +47,7 @@ export default function InterestProfile({ mode = "edit" }: InterestProfileProps)
 	const router = useRouter();
 	const [interests, setInterests] = useState<string[]>([]);
 	const [customInterests, setCustomInterests] = useState<string[]>([]);
+	const [officeLocation, setOfficeLocation] = useState("");
 	const [officeDays, setOfficeDays] = useState<string[]>([]);
 	const [availableFrom, setAvailableFrom] = useState("");
 	const [availableUntil, setAvailableUntil] = useState("");
@@ -67,6 +70,9 @@ export default function InterestProfile({ mode = "edit" }: InterestProfileProps)
 				}
 				if (Array.isArray(parsed.customInterests)) {
 					setCustomInterests(parsed.customInterests);
+				}
+				if (typeof parsed.officeLocation === "string") {
+					setOfficeLocation(parsed.officeLocation);
 				}
 				if (Array.isArray(parsed.officeDays)) {
 					setOfficeDays(parsed.officeDays.filter((day) => typeof day === "string"));
@@ -132,6 +138,11 @@ export default function InterestProfile({ mode = "edit" }: InterestProfileProps)
 
 	function saveProfile(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
+		if (!officeLocation) {
+			setStatusMessage("Choose an office to finish your profile.");
+			return;
+		}
+
 		if (mode === "setup" && interests.length === 0) {
 			setStatusMessage("Choose at least one interest to finish your profile.");
 			return;
@@ -149,6 +160,7 @@ export default function InterestProfile({ mode = "edit" }: InterestProfileProps)
 		const profile: SavedInterestProfile = {
 			interests,
 			customInterests,
+			officeLocation,
 			officeDays,
 			availableFrom,
 			availableUntil,
@@ -197,6 +209,26 @@ export default function InterestProfile({ mode = "edit" }: InterestProfileProps)
 						);
 					})}
 				</div>
+			</fieldset>
+
+			<fieldset className="office-fieldset" disabled={!isLoaded}>
+				<legend>Office location</legend>
+				<p className="interest-help">Choose your usual office.</p>
+				<label htmlFor="office-location">Your office</label>
+				<select
+					id="office-location"
+					value={officeLocation}
+					required
+					onChange={(event) => {
+						setOfficeLocation(event.target.value);
+						setStatusMessage("");
+					}}
+				>
+					<option value="" disabled>Select an office</option>
+					{OFFICE_LOCATIONS.map((location) => (
+						<option key={location} value={location}>{location}</option>
+					))}
+				</select>
 			</fieldset>
 
 			<fieldset className="availability-fieldset" disabled={!isLoaded}>
