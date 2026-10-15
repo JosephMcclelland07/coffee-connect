@@ -27,7 +27,7 @@ const SUGGESTED_INTERESTS = [
 ];
 
 const OFFICE_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-const OFFICE_LOCATIONS = ["Belfast", "Bristol", "London", "Dublin"];
+const OFFICE_LOCATIONS = ["Bristol", "Cardiff", "Edinburgh", "London", "Manchester"];
 
 type SavedInterestProfile = {
 	interests: string[];
