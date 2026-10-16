@@ -1,34 +1,15 @@
 import type { RequestHandler } from "express";
 import { AppError } from "../lib/AppError";
-import type { AppRole } from "../types/auth";
+import { database } from "../lib/database";
 
-const VALID_ROLES: AppRole[] = ["employee", "hr_admin"];
-
-/**
- * Authentication stub.
- *
- * Reads user context from headers so the app can be exercised before real auth
- * integration (JWT/session/SSO). Replace this with token verification in prod.
- */
-export const authContextMiddleware: RequestHandler = (req, _res, next) => {
-  const userId = req.header("x-user-id");
-  const userRole = req.header("x-user-role");
-
-  if (!userId || !userRole) {
-    next();
-    return;
+export const authContextMiddleware: RequestHandler = async (req, _res, next) => {
+  if (req.session?.employeeId) {
+    const employee = await database().employee.findUnique({ where: { employeeId: req.session.employeeId },
+      include: { hrAdministrator: true, microsoftAccount: { select: { connected: true } } } });
+    if (employee?.isActive && employee.microsoftAccount?.connected) {
+      req.user = { id: String(employee.employeeId), role: employee.hrAdministrator ? "hr_admin" : "employee" };
+    }
   }
-
-  if (!VALID_ROLES.includes(userRole as AppRole)) {
-    next(new AppError(400, `Invalid role '${userRole}'.`));
-    return;
-  }
-
-  req.user = {
-    id: userId,
-    role: userRole as AppRole,
-  };
-
   next();
 };
 

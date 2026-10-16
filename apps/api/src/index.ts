@@ -1,4 +1,8 @@
 import express from "express";
+import { microsoftConfigured } from "./lib/config";
+import { sessionMiddleware } from "./lib/session";
+import { microsoftAuthRouter } from "./routes/microsoft-auth";
+import { calendarRouter } from "./routes/calendar";
 import { AppError } from "./lib/AppError";
 import { authContextMiddleware, requireAuth } from "./middleware/auth";
 import { corsMiddleware } from "./middleware/cors";
@@ -32,10 +36,13 @@ app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // 5) Apply auth context parsing globally. Public routes can still remain unauthenticated.
+if (microsoftConfigured()) app.use(sessionMiddleware());
 app.use(authContextMiddleware);
 
 // 6) Basic rate limiting for all API routes.
 app.use(createRateLimitMiddleware({ windowMs: 60_000, max: 120 }));
+app.use("/auth/microsoft", microsoftAuthRouter);
+app.use("/calendar", calendarRouter);
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "api" });

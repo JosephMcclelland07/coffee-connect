@@ -12,7 +12,7 @@ export const requestLoggerMiddleware: RequestHandler = (req, res, next) => {
   res.on("finish", () => {
     const durationMs = Date.now() - start;
     console.log(
-      `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${res.statusCode} ${durationMs}ms requestId=${req.requestId}`
+      `[${new Date().toISOString()}] ${req.method} ${req.path} ${res.statusCode} ${durationMs}ms requestId=${req.requestId}`
     );
   });
 

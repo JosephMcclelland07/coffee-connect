@@ -20,31 +20,9 @@ export default function LoginPage() {
 					<p className={styles.kicker}>YOUR ACCOUNT</p>
 					<h1 id="login-title">Log in</h1>
 					<p className={styles.intro}>Welcome back. Sign in to continue.</p>
-					<form className={styles.form} method="post">
-						<label className={styles.field}>
-							Email
-							<input
-								id="email"
-								name="email"
-								type="email"
-								autoComplete="email"
-								required
-							/>
-						</label>
-						<label className={styles.field}>
-							Password
-							<input
-								id="password"
-								name="password"
-								type="password"
-								autoComplete="current-password"
-								required
-							/>
-						</label>
-						<button className={styles.submitButton} type="submit">
-							Log in
-						</button>
-					</form>
+					<a className={styles.submitButton} href="/api/coffee/auth/microsoft/connect">
+						Sign in with Microsoft
+					</a>
 					<Link className={styles.signupLink} href="/signup">
 						Not a member? Sign up!
 					</Link>

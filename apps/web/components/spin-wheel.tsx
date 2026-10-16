@@ -12,6 +12,7 @@ type SpinWheelProps = {
 	currentUserId: string;
 	currentUserInterests: string[];
 	people: WheelPerson[];
+	resolveWinner?: () => Promise<string>;
 };
 
 type SpinResult = {
@@ -43,11 +44,12 @@ function normaliseInterest(interest: string) {
 	return interest.trim().toLowerCase();
 }
 
-export default function SpinWheel({ currentUserId, currentUserInterests, people }: SpinWheelProps) {
+export default function SpinWheel({ currentUserId, currentUserInterests, people, resolveWinner }: SpinWheelProps) {
 	const [rotation, setRotation] = useState(0);
 	const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
 	const [pendingSpinResult, setPendingSpinResult] = useState<SpinResult | null>(null);
 	const [isSpinning, setIsSpinning] = useState(false);
+	const [error, setError] = useState("");
 
 	const candidatePeople = useMemo(
 		() => people.filter((person) => person.id !== currentUserId),
@@ -76,7 +78,7 @@ export default function SpinWheel({ currentUserId, currentUserInterests, people 
 		});
 	}, [candidatePeople]);
 
-	function spinWheel() {
+	async function spinWheel() {
 		if (wheelSegments.length === 0 || isSpinning) {
 			return;
 		}
@@ -94,7 +96,21 @@ export default function SpinWheel({ currentUserId, currentUserInterests, people 
 		const topMatches = scoredPeople.filter(
 			(score) => score.sharedInterests === bestSharedInterestCount,
 		);
-		const winningCandidate = topMatches[getCryptographicRandomIndex(topMatches.length)];
+		setIsSpinning(true);
+		setError("");
+		let winningCandidate = topMatches[getCryptographicRandomIndex(topMatches.length)];
+		if (resolveWinner) {
+			try {
+				const winnerId = await resolveWinner();
+				const serverWinner = scoredPeople.find((candidate) => candidate.person.id === winnerId);
+				if (!serverWinner) throw new Error("The colleague list changed. Refresh and spin again.");
+				winningCandidate = serverWinner;
+			} catch (caught) {
+				setError(caught instanceof Error ? caught.message : "Could not save your match.");
+				setIsSpinning(false);
+				return;
+			}
+		}
 
 		setSpinResult(null);
 		setIsSpinning(true);
@@ -135,7 +151,7 @@ export default function SpinWheel({ currentUserId, currentUserInterests, people 
 				aria-label="Spin the meetup wheel"
 				aria-describedby="wheel-caption"
 				onClick={spinWheel}
-				disabled={isSpinning}
+				disabled={isSpinning || candidatePeople.length === 0}
 			>
 				<span className="spin-wheel-pointer" aria-hidden="true" />
 				<span
@@ -165,6 +181,7 @@ export default function SpinWheel({ currentUserId, currentUserInterests, people 
 					{spinResult.wasTieBreak ? " • tie broken with secure random selection" : ""}.
 				</p>
 			)}
+			{error && <p role="alert">{error}</p>}
 		</>
 	);
 }
