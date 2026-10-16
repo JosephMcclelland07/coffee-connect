@@ -107,6 +107,7 @@
 	margin: 0;
 	font-size: 2.75rem;
 	font-weight: 500;
+	overflow-wrap: anywhere;
 }
 
 .intro {

@@ -11,6 +11,7 @@ model Employee {
   firstName       String   @db.VarChar(100) @map("FirstName")
   lastName        String   @db.VarChar(100) @map("LastName")
   email           String   @unique @db.VarChar(255) @map("Email")
+  passwordHash    String?  @db.VarChar(255) @map("PasswordHash")
   officeLocation  String?  @db.VarChar(100) @map("OfficeLocation")
   department      String?  @db.VarChar(100) @map("Department")
   role            String?  @db.VarChar(100) @map("Role")
