@@ -30,15 +30,6 @@ VALUES
     ('Oscar', 'Murphy', 'oscar.murphy@example.com', 'Cardiff', 'Finance', 'Management Accountant', TRUE, CURRENT_TIMESTAMP),
     ('Poppy', 'Bailey', 'poppy.bailey@example.com', 'London', 'Engineering', 'Backend Developer', TRUE, CURRENT_TIMESTAMP);
 
-INSERT INTO HR_Administrator (EmployeeID, PermissionLevel)
-SELECT e.EmployeeID, admins.PermissionLevel
-FROM (
-    SELECT 'Noah' AS FirstName, 'Patel' AS LastName, 'Full Access' AS PermissionLevel
-    UNION ALL SELECT 'Freya', 'Morgan', 'Full Access'
-) AS admins
-JOIN Employee e
-    ON e.FirstName = admins.FirstName
-    AND e.LastName = admins.LastName;
 
 INSERT INTO Interest (InterestName)
 VALUES
@@ -100,57 +91,3 @@ JOIN Employee employee_one ON employee_one.Email = match_seed.EmployeeOneEmail
 JOIN Employee employee_two ON employee_two.Email = match_seed.EmployeeTwoEmail
 ORDER BY match_seed.MatchOffset;
 
-SET @seed_match_first_id = LAST_INSERT_ID();
-
-INSERT INTO Meeting (MatchID, MeetingDate, StartTime, EndTime, Location, Status)
-SELECT
-    m.MatchID,
-    DATE(m.MatchDate),
-    ADDTIME('09:00:00', SEC_TO_TIME(meeting_seed.MatchOffset * 1800)),
-    ADDTIME('09:30:00', SEC_TO_TIME(meeting_seed.MatchOffset * 1800)),
-    CASE meeting_seed.MatchOffset
-        WHEN 0 THEN 'Virtual - Reading'
-        WHEN 1 THEN 'Virtual - Hiking'
-        WHEN 2 THEN 'Virtual - Cooking'
-        WHEN 3 THEN 'Virtual - Cycling and Technology'
-        WHEN 4 THEN 'Virtual - Photography'
-        WHEN 5 THEN 'Virtual - Running'
-        WHEN 6 THEN 'Virtual - Gardening'
-        WHEN 7 THEN 'Virtual - Reading'
-        WHEN 8 THEN 'Virtual - Board Games'
-        WHEN 9 THEN 'Virtual - Travel'
-        WHEN 10 THEN 'Virtual - Volunteering'
-        WHEN 11 THEN 'Virtual - Live Music'
-        WHEN 12 THEN 'Virtual - Technology'
-        WHEN 13 THEN 'Virtual - Technology'
-        WHEN 14 THEN 'Virtual - Yoga'
-        WHEN 15 THEN 'Virtual - Reading'
-        WHEN 16 THEN 'Virtual - Board Games'
-        WHEN 17 THEN 'Virtual - Photography'
-        WHEN 18 THEN 'Virtual - Coffee'
-        WHEN 19 THEN 'Virtual - Volunteering'
-    END,
-    m.MatchStatus
-FROM (
-    SELECT 0 AS MatchOffset
-    UNION ALL SELECT 1
-    UNION ALL SELECT 2
-    UNION ALL SELECT 3
-    UNION ALL SELECT 4
-    UNION ALL SELECT 5
-    UNION ALL SELECT 6
-    UNION ALL SELECT 7
-    UNION ALL SELECT 8
-    UNION ALL SELECT 9
-    UNION ALL SELECT 10
-    UNION ALL SELECT 11
-    UNION ALL SELECT 12
-    UNION ALL SELECT 13
-    UNION ALL SELECT 14
-    UNION ALL SELECT 15
-    UNION ALL SELECT 16
-    UNION ALL SELECT 17
-    UNION ALL SELECT 18
-    UNION ALL SELECT 19
-) AS meeting_seed
-JOIN `Match` m ON m.MatchID = @seed_match_first_id + meeting_seed.MatchOffset;

@@ -93,42 +93,6 @@ CREATE TABLE IF NOT EXISTS Notification (
         ON UPDATE CASCADE
 );
 
-/* ==========================================
-   HR_ADMINISTRATOR
-   ========================================== */
-CREATE TABLE IF NOT EXISTS HR_Administrator (
-    AdminID INT AUTO_INCREMENT PRIMARY KEY,
-    EmployeeID INT NOT NULL,
-    PermissionLevel VARCHAR(50) NOT NULL,
-
-    CONSTRAINT FK_HRAdmin_Employee
-        FOREIGN KEY (EmployeeID)
-        REFERENCES Employee(EmployeeID)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT UQ_HRAdmin_Employee
-        UNIQUE (EmployeeID)
-);
-
-/* ==========================================
-   MEETING
-   ========================================== */
-CREATE TABLE IF NOT EXISTS Meeting (
-    MeetingID INT AUTO_INCREMENT PRIMARY KEY,
-    MatchID INT NOT NULL,
-    MeetingDate DATE NOT NULL,
-    StartTime TIME NOT NULL,
-    EndTime TIME NOT NULL,
-    Location VARCHAR(255),
-    Status VARCHAR(50) NOT NULL,
-
-    CONSTRAINT FK_Meeting_Match
-        FOREIGN KEY (MatchID)
-        REFERENCES `Match`(MatchID)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
-);
 
 /* ==========================================
    INDEXES
@@ -146,8 +110,6 @@ CREATE INDEX IX_Match_EmployeeOneID
 CREATE INDEX IX_Match_EmployeeTwoID
     ON `Match` (EmployeeTwoID);
 
-CREATE INDEX IX_Meeting_MatchID
-    ON Meeting (MatchID);
 
 CREATE INDEX IX_EmployeeInterest_EmployeeID
     ON Employee_Interest (EmployeeID);
@@ -155,5 +117,3 @@ CREATE INDEX IX_EmployeeInterest_EmployeeID
 CREATE INDEX IX_EmployeeInterest_InterestID
     ON Employee_Interest (InterestID);
 
-CREATE INDEX IX_HRAdministrator_EmployeeID
-    ON HR_Administrator (EmployeeID);
