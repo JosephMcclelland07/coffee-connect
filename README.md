@@ -50,7 +50,7 @@ and password. The API saves accounts through Prisma, stores bcrypt hashes
 (cost 12), and issues one-hour JWTs after password verification. The web app
 keeps tokens in HTTP-only cookies; passwords and hashes are never token claims.
 Passwords must contain at least 12 characters and at most 72 UTF-8 bytes.
-Only `@brightmedia.com` addresses are accepted. Names and emails are not proof
+Only `@paconsulting.com` addresses are accepted. Names and emails are not proof
 of identity: email ownership verification must be added before production use.
 Accounts use the existing `Employee` table, with bcrypt hashes in a nullable
 `PasswordHash` column. Registration cannot grant HR roles or claim an existing

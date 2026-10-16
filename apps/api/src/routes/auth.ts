@@ -12,8 +12,8 @@ function validateCredentials(body: unknown, registration: boolean) {
   const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
   const password = payload.password;
   const name = typeof payload.name === "string" ? payload.name.trim() : "";
-  if (email.length > 255 || !/^[^\s@]+@brightmedia\.com$/.test(email)) {
-    throw new AppError(400, "Use your @brightmedia.com email address.");
+  if (email.length > 255 || !/^[^\s@]+@paconsulting\.com$/.test(email)) {
+    throw new AppError(400, "Use your @paconsulting.com email address.");
   }
   if (typeof password !== "string" || password.length < 12 || Buffer.byteLength(password, "utf8") > 72) {
     throw new AppError(400, "Password must be at least 12 characters and at most 72 UTF-8 bytes.");

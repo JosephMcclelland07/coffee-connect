@@ -33,7 +33,7 @@ test("registration, password verification, and JWT protection", async (suite) =>
   await new Promise(resolve => server.once("listening", resolve));
   suite.after(() => new Promise(resolve => server.close(resolve)));
   const base = `http://127.0.0.1:${server.address().port}`;
-  const credentials = { name: "Test Person", email: "person@brightmedia.com", password: "a-test-password-123" };
+  const credentials = { name: "Test Person", email: "person@paconsulting.com", password: "a-test-password-123" };
   let token;
 
   async function post(path, body, prefix = "auth") {
@@ -50,7 +50,7 @@ test("registration, password verification, and JWT protection", async (suite) =>
     assert.equal(accounts.size, 0);
   });
   await suite.test("stores a bcrypt hash and normalizes email without exposing the hash", async () => {
-    const result = await post("register", { ...credentials, email: " Person@BrightMedia.COM " });
+    const result = await post("register", { ...credentials, email: " Person@PACONSULTING.COM " });
     assert.equal(result.status, 201);
     const saved = accounts.get(credentials.email);
     assert.notEqual(saved.passwordHash, credentials.password);
@@ -75,7 +75,7 @@ test("registration, password verification, and JWT protection", async (suite) =>
     assert.equal(payload.password, undefined);
   });
   await suite.test("unknown accounts receive the same credential error", async () => {
-    const result = await post("login", { ...credentials, email: "unknown@brightmedia.com" });
+    const result = await post("login", { ...credentials, email: "unknown@paconsulting.com" });
     assert.equal(result.status, 401);
     assert.equal(result.body.error, "Invalid email or password.");
   });
@@ -84,16 +84,16 @@ test("registration, password verification, and JWT protection", async (suite) =>
   });
   await suite.test("rejects inactive employees and employees without passwords", async () => {
     const saved = accounts.get(credentials.email);
-    accounts.set("inactive@brightmedia.com", { ...saved, isActive: false });
-    accounts.set("legacy@brightmedia.com", { ...saved, passwordHash: null });
-    for (const email of ["inactive@brightmedia.com", "legacy@brightmedia.com"]) {
+    accounts.set("inactive@paconsulting.com", { ...saved, isActive: false });
+    accounts.set("legacy@paconsulting.com", { ...saved, passwordHash: null });
+    for (const email of ["inactive@paconsulting.com", "legacy@paconsulting.com"]) {
       const result = await post("login", { ...credentials, email }, "ineligible");
       assert.equal(result.status, 401);
       assert.equal(result.body.error, "Invalid email or password.");
     }
-    const result = await post("register", { ...credentials, email: "legacy@brightmedia.com" }, "ineligible");
+    const result = await post("register", { ...credentials, email: "legacy@paconsulting.com" }, "ineligible");
     assert.equal(result.status, 409);
-    assert.equal(accounts.get("legacy@brightmedia.com").passwordHash, null);
+    assert.equal(accounts.get("legacy@paconsulting.com").passwordHash, null);
   });
   await suite.test("rejects missing, forged and expired tokens and spoofed identity headers", async () => {
     const expired = jwt.sign({ role: "employee" }, process.env.JWT_SECRET, {
