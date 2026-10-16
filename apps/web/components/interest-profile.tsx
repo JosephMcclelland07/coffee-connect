@@ -4,27 +4,18 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { PROFILE_SETUP_PENDING_KEY, PROFILE_STORAGE_KEY } from "../lib/profile-flow";
 const MAX_INTERESTS = 3;
-
-const SUGGESTED_INTERESTS = [
-	"Coffee & cafes",
-	"Books & reading",
-	"Walking & hiking",
-	"Live music",
-	"Food & cooking",
-	"Art & museums",
-	"Board games",
-	"Films & cinema",
-	"Gaming",
-	"Fitness & sports",
-	"Photography",
-	"Travel",
-	"Gardening",
-	"Volunteering",
-	"Running",
-	"Technology & AI",
-	"Crafts & DIY",
-	"Pets & animals",
-];
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/+$/, "");
+const LEGACY_INTEREST_ALIASES: Record<string, string> = {
+	Hiking: "Walking & hiking",
+	Cooking: "Food & cooking",
+	Reading: "Books & reading",
+	"Board Games": "Board games",
+	"Live Music": "Live music",
+	Coffee: "Coffee & cafes",
+	Technology: "Technology & AI",
+	Art: "Art & museums",
+	Yoga: "Fitness & sports",
+};
 
 const OFFICE_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const OFFICE_LOCATIONS = ["Bristol", "Cardiff", "Edinburgh", "London", "Manchester"];
@@ -43,9 +34,16 @@ type InterestProfileProps = {
 	mode?: "setup" | "edit";
 };
 
+type InterestCategory = {
+	interestCategoryId: number;
+	categoryName: string;
+	interests: { interestId: number; interestName: string }[];
+};
+
 export default function InterestProfile({ mode = "edit" }: InterestProfileProps) {
 	const router = useRouter();
 	const [interests, setInterests] = useState<string[]>([]);
+	const [interestCategories, setInterestCategories] = useState<InterestCategory[]>([]);
 	const [customInterests, setCustomInterests] = useState<string[]>([]);
 	const [officeLocation, setOfficeLocation] = useState("");
 	const [officeDays, setOfficeDays] = useState<string[]>([]);
@@ -54,6 +52,36 @@ export default function InterestProfile({ mode = "edit" }: InterestProfileProps)
 	const [customInterest, setCustomInterest] = useState("");
 	const [statusMessage, setStatusMessage] = useState("");
 	const [isLoaded, setIsLoaded] = useState(false);
+
+	useEffect(() => {
+		let cancelled = false;
+
+		async function loadCategories() {
+			try {
+				const response = await fetch(`${API_BASE_URL}/interest-categories`);
+				if (!response.ok) throw new Error("Interest categories request failed.");
+
+				const payload = await response.json() as { categories?: InterestCategory[] };
+				if (!Array.isArray(payload.categories)) throw new Error("Interest categories response is invalid.");
+
+				const sortedCategories = payload.categories
+					.map((category) => ({
+						...category,
+						interests: [...category.interests].sort((first, second) => first.interestId - second.interestId),
+					}))
+					.sort((first, second) => first.interestCategoryId - second.interestCategoryId);
+
+				if (!cancelled) setInterestCategories(sortedCategories);
+			} catch {
+				if (!cancelled) setStatusMessage("Interest categories could not be loaded from the database.");
+			}
+		}
+
+		void loadCategories();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
 
 	useEffect(() => {
 		try {
@@ -122,7 +150,10 @@ export default function InterestProfile({ mode = "edit" }: InterestProfileProps)
 			return;
 		}
 
-		const exists = [...SUGGESTED_INTERESTS, ...customInterests].some(
+		const suggestedInterests = interestCategories.flatMap((category) =>
+			category.interests.map(({ interestName }) => LEGACY_INTEREST_ALIASES[interestName] ?? interestName),
+		);
+		const exists = [...suggestedInterests, ...customInterests].some(
 			(interest) => interest.toLowerCase() === value.toLowerCase(),
 		);
 		if (exists) {
@@ -180,34 +211,67 @@ export default function InterestProfile({ mode = "edit" }: InterestProfileProps)
 		}
 	}
 
-	const allInterests = [...SUGGESTED_INTERESTS, ...customInterests];
-
 	return (
 		<form className="interest-form" onSubmit={saveProfile}>
 			<fieldset className="interest-fieldset" disabled={!isLoaded}>
 				<legend>Hobbies and interests</legend>
 				<p className="interest-help">Choose up to {MAX_INTERESTS} interests.</p>
-				<div className="interest-options">
-					{allInterests.map((interest, index) => {
-						const inputId = `interest-${index}`;
-						const isSelected = interests.includes(interest);
-						return (
-							<label
-								className={`interest-option${isSelected ? " is-selected" : ""}`}
-								key={interest}
-								htmlFor={inputId}
-							>
-								<input
-									id={inputId}
-									type="checkbox"
-									checked={isSelected}
-									disabled={!isSelected && interests.length >= MAX_INTERESTS}
-									onChange={() => toggleInterest(interest)}
-								/>
-								<span>{interest}</span>
-							</label>
-						);
-					})}
+				<div className="interest-categories">
+					{interestCategories.map((category) => (
+						<section className="interest-category" key={category.interestCategoryId}>
+							<h3>{category.categoryName}</h3>
+							<div className="interest-options">
+								{category.interests.map(({ interestId, interestName }) => {
+									const inputId = `interest-${interestId}`;
+									const displayName = LEGACY_INTEREST_ALIASES[interestName] ?? interestName;
+									const isSelected = interests.includes(displayName);
+									return (
+										<label
+											className={`interest-option${isSelected ? " is-selected" : ""}`}
+											key={interestId}
+											htmlFor={inputId}
+										>
+											<input
+												id={inputId}
+												type="checkbox"
+												checked={isSelected}
+												disabled={!isSelected && interests.length >= MAX_INTERESTS}
+												onChange={() => toggleInterest(displayName)}
+											/>
+											<span>{displayName}</span>
+										</label>
+									);
+								})}
+							</div>
+						</section>
+					))}
+					{customInterests.length > 0 && (
+						<section className="interest-category" key="custom-interests">
+							<h3>Your interests</h3>
+							<div className="interest-options">
+								{customInterests.map((interest) => {
+									const inputId = `interest-custom-${interest.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+									const isSelected = interests.includes(interest);
+									return (
+										<label
+											className={`interest-option${isSelected ? " is-selected" : ""}`}
+											key={interest}
+											htmlFor={inputId}
+										>
+											<input
+												id={inputId}
+												type="checkbox"
+												checked={isSelected}
+												disabled={!isSelected && interests.length >= MAX_INTERESTS}
+												onChange={() => toggleInterest(interest)}
+											/>
+											<span>{interest}</span>
+										</label>
+									);
+								})}
+							</div>
+						</section>
+					)}
 				</div>
 			</fieldset>
 

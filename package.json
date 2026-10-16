@@ -11,6 +11,7 @@
     "dev:api": "npm run dev -w apps/api",
     "dev": "npm run dev:web",
     "db:setup": "bash scripts/db-setup.sh",
+    "db:seed": "npm run seed -w packages/db",
     "build": "npm run build -ws",
     "lint": "npm run lint -ws --if-present",
     "test": "npm run test -ws --if-present"
