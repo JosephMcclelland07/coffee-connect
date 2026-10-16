@@ -111,8 +111,8 @@ export default function LoginPage() {
 								name="email"
 								type="email"
 								autoComplete="email"
-								pattern="[^\s@]+@[bB][rR][iI][gG][hH][tT][mM][eE][dD][iI][aA][.][cC][oO][mM]"
-								title="Use your @brightmedia.com email address"
+								pattern="[^\s@]+@[pP][aA][cC][oO][nN][sS][uU][lL][tT][iI][nN][gG][.][cC][oO][mM]"
+								title="Use your @paconsulting.com email address"
 								maxLength={255}
 								disabled={pending}
 								required
