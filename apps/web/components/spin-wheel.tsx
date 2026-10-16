@@ -1,6 +1,6 @@
 "use client";
 
-import { type TransitionEvent, useMemo, useState } from "react";
+import { type CSSProperties, type TransitionEvent, useMemo, useState } from "react";
 
 type WheelPerson = {
 	id: string;
@@ -19,6 +19,16 @@ type SpinResult = {
 	sharedInterests: number;
 	wasTieBreak: boolean;
 };
+
+const CONFETTI_COLORS = ["#c92f2b", "#e78b0b", "#0968b0", "#2f7d63", "#6f1daa"];
+const CONFETTI_PIECES = Array.from({ length: 36 }, (_, index) => ({
+	id: index,
+	color: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
+	driftX: `${((index * 53) % 361) - 180}px`,
+	driftY: `${70 + ((index * 29) % 151)}px`,
+	rotation: `${((index * 113) % 720) - 360}deg`,
+	delay: `${(index % 8) * 18}ms`,
+}));
 
 function getCryptographicRandomIndex(size: number) {
 	if (size <= 1) {
@@ -48,6 +58,7 @@ export default function SpinWheel({ currentUserId, currentUserInterests, people 
 	const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
 	const [pendingSpinResult, setPendingSpinResult] = useState<SpinResult | null>(null);
 	const [isSpinning, setIsSpinning] = useState(false);
+	const [confettiBurst, setConfettiBurst] = useState(0);
 
 	const candidatePeople = useMemo(
 		() => people.filter((person) => person.id !== currentUserId),
@@ -118,11 +129,14 @@ export default function SpinWheel({ currentUserId, currentUserInterests, people 
 	}
 
 	function handleWheelTransitionEnd(event: TransitionEvent<HTMLSpanElement>) {
-		if (event.propertyName !== "transform" || !isSpinning) {
+		if (event.target !== event.currentTarget || event.propertyName !== "transform" || !isSpinning) {
 			return;
 		}
 
 		setSpinResult(pendingSpinResult);
+		if (pendingSpinResult) {
+			setConfettiBurst((currentBurst) => currentBurst + 1);
+		}
 		setPendingSpinResult(null);
 		setIsSpinning(false);
 	}
@@ -157,6 +171,23 @@ export default function SpinWheel({ currentUserId, currentUserInterests, people 
 					))}
 					<span className="wheel-center">CC</span>
 				</span>
+				{confettiBurst > 0 && (
+					<span className="wheel-confetti" key={confettiBurst} aria-hidden="true">
+						{CONFETTI_PIECES.map((piece) => (
+							<span
+								className="wheel-confetti-piece"
+								key={piece.id}
+								style={{
+									backgroundColor: piece.color,
+									animationDelay: piece.delay,
+									"--confetti-drift-x": piece.driftX,
+									"--confetti-drift-y": piece.driftY,
+									"--confetti-rotation": piece.rotation,
+								} as CSSProperties}
+							/>
+						))}
+					</span>
+				)}
 			</button>
 			{spinResult && (
 				<p className="wheel-caption">
