@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { AppError } from "../lib/AppError";
 import { database } from "../lib/database";
 import { createToken } from "../lib/tokens";
@@ -36,7 +36,7 @@ function publicAccount(employee: { employeeId: number; firstName: string; lastNa
 
 const dummyHash = bcrypt.hash("unused-account-timing-padding", 12);
 
-export function createAuthRouter(store: Pick<PrismaClient, "employee"> = database) {
+export function createAuthRouter(store?: Pick<PrismaClient, "employee">) {
   const authRouter = Router();
   authRouter.use(createRateLimitMiddleware({ windowMs: 60_000, max: 10 }));
 
@@ -44,7 +44,7 @@ export function createAuthRouter(store: Pick<PrismaClient, "employee"> = databas
     try {
       const { email, password, firstName, lastName } = validateCredentials(req.body, true);
       const passwordHash = await bcrypt.hash(password, 12);
-      const employee = await store.employee.create({
+      const employee = await (store ?? database()).employee.create({
         data: { firstName, lastName, email, passwordHash },
         select: { employeeId: true, firstName: true, lastName: true, email: true },
       });
@@ -57,7 +57,7 @@ export function createAuthRouter(store: Pick<PrismaClient, "employee"> = databas
   authRouter.post("/login", async (req, res, next) => {
     try {
       const { email, password } = validateCredentials(req.body, false);
-      const employee = await store.employee.findUnique({ where: { email } });
+      const employee = await (store ?? database()).employee.findUnique({ where: { email } });
       const matches = await bcrypt.compare(password, employee?.passwordHash ?? await dummyHash);
       if (!employee?.passwordHash || !employee.isActive || !matches) {
         throw new AppError(401, "Invalid email or password.");

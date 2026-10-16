@@ -1,6 +1,6 @@
-import Link from "next/link";
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import styles from "./login.module.css";
 
@@ -14,6 +14,7 @@ export default function LoginPage() {
 	const [message, setMessage] = useState("");
 
 	useEffect(() => {
+		if (new URLSearchParams(window.location.search).get("registered") === "1") setMessage("Account created. Log in to continue.");
 		const controller = new AbortController();
 		fetch("/api/auth", { signal: controller.signal })
 			.then(async (response) => {
@@ -87,8 +88,6 @@ export default function LoginPage() {
 			<section className={styles.loginPanel} aria-labelledby="login-title">
 				<div className={styles.formWrap}>
 					<p className={styles.kicker}>YOUR ACCOUNT</p>
-					<h1 id="login-title">Log in</h1>
-					<p className={styles.intro}>Welcome back. Sign in to continue.</p>
 					<a className={styles.submitButton} href="/api/coffee/auth/microsoft/connect">
 						Sign in with Microsoft
 					</a>
@@ -101,6 +100,8 @@ export default function LoginPage() {
 					{account ? (
 						<>
 							<p className={styles.intro}>{account.email}</p>
+							<Link className={styles.signupLink} href="/meetups">Your meetups</Link>
+							<Link className={styles.signupLink} href="/personal">Your profile</Link>
 							<button className={styles.submitButton} type="button" disabled={pending} onClick={logout}>Log out</button>
 						</>
 					) : (

@@ -4,6 +4,7 @@ import express, { type Request, type Response } from "express";
 import { authContextMiddleware, requireAuth } from "../middleware/auth";
 import { requireCsrf } from "../routes/microsoft-auth";
 import { graphRequest, GraphError } from "./microsoft";
+import { app } from "../index";
 
 test("forged user and admin headers do not authenticate requests", async () => {
   const app = express();
@@ -41,4 +42,23 @@ test("Graph handles empty cancellation responses and does not expose upstream er
   mocked.mock.mockImplementation(async () => new Response("private calendar details", { status: 403 }));
   await assert.rejects(graphRequest("test-token", "/me/events"), (error: unknown) => error instanceof GraphError &&
     error.graphStatus === 403 && !error.message.includes("private calendar details"));
+});
+
+test("application mounts calendar/auth routes and rejects malformed JSON safely", async () => {
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  try {
+    const address = server.address();
+    assert.ok(address && typeof address !== "string");
+    const base = `http://127.0.0.1:${address.port}`;
+    assert.equal((await fetch(`${base}/health`)).status, 200);
+    const status = await fetch(`${base}/auth/microsoft/status`);
+    assert.equal(status.status, 200);
+    assert.equal(typeof (await status.json()).configured, "boolean");
+    assert.equal((await fetch(`${base}/calendar/matches`)).status, 401);
+    assert.equal((await fetch(`${base}/me`)).status, 401);
+    const invalid = await fetch(`${base}/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{" });
+    assert.equal(invalid.status, 400);
+    assert.equal((await invalid.json()).error, "Invalid JSON request body.");
+  } finally { await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve())); }
 });

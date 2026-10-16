@@ -1,16 +1,18 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-const apiUrl = process.env.API_URL || "http://localhost:4000";
+const apiUrl = process.env.API_ORIGIN || process.env.API_URL || "http://127.0.0.1:4000";
 const cookieName = "coffee_connect_session";
 
 export async function POST(request: NextRequest) {
   if (request.headers.get("origin") !== request.nextUrl.origin) {
     return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   }
+  let body;
+  try { body = await request.json(); }
+  catch { return NextResponse.json({ error: "Invalid JSON request." }, { status: 400 }); }
   try {
-    const body = await request.json();
-    if (body.mode !== "login" && body.mode !== "register") {
+    if (!body || (body.mode !== "login" && body.mode !== "register")) {
       return NextResponse.json({ error: "Invalid action." }, { status: 400 });
     }
     const upstream = await fetch(`${apiUrl}/auth/${body.mode}`, {

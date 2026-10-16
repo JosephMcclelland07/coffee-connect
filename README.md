@@ -35,6 +35,7 @@ Merge the settings from [.env.example](.env.example) into your existing root `.e
 | `WEB_ORIGIN` | Browser origin, initially `http://localhost:3000` |
 | `SESSION_SECRET` | Random value used to sign the session cookie; at least 32 characters |
 | `TOKEN_ENCRYPTION_KEY` | Base64 encoding of exactly 32 random bytes for AES-256-GCM encryption |
+| `JWT_SECRET` | Independent random secret of at least 32 bytes for password-login tokens |
 | `PORT` | Express port, initially 4000 |
 
 Generate two independent random values by running this command twice in your own terminal. Put one value in `SESSION_SECRET` and the other in `TOKEN_ENCRYPTION_KEY`:
@@ -73,3 +74,38 @@ The first command executed only the new Outlook SQL. The second recorded that ex
 ```bash
 npm install
 ```
+
+Generate a third independent random value using the command above and set `JWT_SECRET` in the root `.env` to enable password login. A missing or short secret returns a controlled setup error; it no longer prevents the API from starting. Never commit the secret or paste it into chat.
+
+After installing dependencies, generate database types and run the checks:
+
+```bash
+npm exec -w packages/db -- prisma generate --config prisma7.config.ts --no-hints
+npm run build
+npm run lint
+npm test
+```
+
+`build` compiles both applications. `lint` checks the web application using the Strict Next.js rules; API compilation supplies its TypeScript check. `test` includes scheduling/security tests and the merged registration, password-login and JWT tests. Authentication tests use an in-memory account store and do not create employee records in your database.
+
+Run the servers in separate terminals from this directory:
+
+```bash
+npm run dev:api
+```
+
+```bash
+npm run dev:web -- --port 3000
+```
+
+Open `http://localhost:3000`. `/signup` now registers a real account and sends the user to `/login`; `/login` supports password authentication and Microsoft sign-in. Both account and calendar proxy routes use `API_ORIGIN` in `apps/web/.env.local`, defaulting to `http://127.0.0.1:4000`. The older `API_URL` setting remains a fallback for the account route only.
+
+## Verified Status and Remaining Gaps
+
+- The nullable `Employee.PasswordHash` column was missing after the login merge. Migration `20261016150000_employee_password_hash` has now been applied and recorded locally without changing existing employee records. Do not rerun its SQL on this database.
+- The older migration-history/foreign-key drift described above remains unresolved. Do not reset or blindly deploy migrations to this existing database.
+- Real Outlook sign-in, availability and invitations require the tenant configuration and two authorised test mailboxes. Browser demonstrations are not proof of real Microsoft access.
+- Password registration checks the `@paconsulting.com` domain but does **not** verify ownership of that mailbox. Do not expose password registration publicly before adding ownership verification or restricting registration to a trusted provisioning process; Microsoft SSO is the preferred verified organisational identity path.
+- The Personal/profile editor currently stores interests, office days and hours in browser storage. It does not update database interests used by the matching wheel or automatically update calendar preferences. Calendar preferences are managed separately on Meetups. This needs a separate persisted profile workflow before claiming end-to-end interest matching.
+- The chat component is a local demonstration, not server-backed messaging. Notifications and background Outlook webhook delivery are not implemented.
+- Review dependency audit findings and configure HTTPS, secret management, database TLS and retention before production deployment. Successful builds/tests alone do not certify production readiness.

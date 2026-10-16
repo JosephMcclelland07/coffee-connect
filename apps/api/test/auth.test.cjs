@@ -1,14 +1,14 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const express = require("express");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 process.env.DATABASE_URL = "mysql://test:test@localhost:3306/test";
 process.env.JWT_SECRET = "test-only-secret-not-for-deployment-123456789";
 
 const { createAuthRouter } = require("../dist/routes/auth");
-const { authContextMiddleware, requireAuth } = require("../dist/middleware/auth");
+const { createAuthContextMiddleware, requireAuth } = require("../dist/middleware/auth");
 const { errorHandlerMiddleware } = require("../dist/middleware/errorHandler");
 
 test("registration, password verification, and JWT protection", async (suite) => {
@@ -20,11 +20,13 @@ test("registration, password verification, and JWT protection", async (suite) =>
       accounts.set(data.email, account);
       return { employeeId: account.employeeId, firstName: account.firstName, lastName: account.lastName, email: account.email };
     },
-    async findUnique({ where }) { return accounts.get(where.email) ?? null; },
+    async findUnique({ where }) {
+      return where.email ? accounts.get(where.email) ?? null : [...accounts.values()].find(account => account.employeeId === where.employeeId) ?? null;
+    },
   } };
   const app = express();
   app.use(express.json());
-  app.use(authContextMiddleware);
+  app.use(createAuthContextMiddleware(store));
   app.use("/auth", createAuthRouter(store));
   app.use("/ineligible", createAuthRouter(store));
   app.get("/protected", requireAuth, (req, res) => res.json(req.user));

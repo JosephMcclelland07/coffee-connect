@@ -16,7 +16,7 @@ import { validateBody } from "./middleware/validate";
 import { authRouter } from "./routes/auth";
 import { database } from "./lib/database";
 
-const app = express();
+export const app = express();
 const port = Number(process.env.PORT) || 4000;
 
 app.set("trust proxy", false);
@@ -41,6 +41,8 @@ app.use(authContextMiddleware);
 // 6) Basic rate limiting for all API routes.
 app.use(createRateLimitMiddleware({ windowMs: 60_000, max: 120 }));
 app.use("/auth", authRouter);
+app.use("/auth/microsoft", microsoftAuthRouter);
+app.use("/calendar", calendarRouter);
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "api" });
@@ -48,7 +50,7 @@ app.get("/health", (_req, res) => {
 
 app.get("/me", requireAuth, async (req, res, next) => {
   try {
-    const employee = await database.employee.findUnique({
+    const employee = await database().employee.findUnique({
       where: { employeeId: Number(req.user!.id) },
       select: { employeeId: true, firstName: true, lastName: true, email: true, isActive: true },
     });
@@ -99,9 +101,12 @@ const validateCreateEmployee = validateBody((input) => {
 // Example protected admin route shape for your Employee table flow.
 app.post("/employees", requireAuth, requireRole("hr_admin"), validateCreateEmployee, async (req, res, next) => {
   try {
-    // TODO: Persist with Prisma once API <-> DB package wiring is completed.
+    const employee = await database().employee.create({
+      data: req.body,
+      select: { employeeId: true, firstName: true, lastName: true, email: true },
+    });
     res.status(201).json({
-      employee: req.body,
+      employee,
       createdBy: req.user?.id,
       requestId: req.requestId,
     });
@@ -125,6 +130,8 @@ app.use(notFoundMiddleware);
 // Error handler must be registered last.
 app.use(errorHandlerMiddleware);
 
-app.listen(port, () => {
-  console.log(`API running on http://localhost:${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`API running on http://localhost:${port}`);
+  });
+}
