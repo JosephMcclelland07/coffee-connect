@@ -18,8 +18,8 @@ model Employee {
   isActive        Boolean  @default(true) @map("IsActive")
   createdDate     DateTime @default(now()) @map("CreatedDate")
 
-  notifications   Notification[]
-  interests       EmployeeInterest[]
+  notifications       Notification[]
+  interests           EmployeeInterest[]
   matchesAsEmployeeOne Match[] @relation("MatchEmployeeOne")
   matchesAsEmployeeTwo Match[] @relation("MatchEmployeeTwo")
   hrAdministrator HRAdministrator?
@@ -33,10 +33,22 @@ model Employee {
 model Interest {
   interestId   Int    @id @default(autoincrement()) @map("InterestID")
   interestName String @unique @db.VarChar(100) @map("InterestName")
+  categoryId   Int?   @map("CategoryID")
 
+  category  InterestCategory? @relation(fields: [categoryId], references: [interestCategoryId], onDelete: SetNull, onUpdate: Cascade)
   employees EmployeeInterest[]
 
+  @@index([categoryId], map: "IX_Interest_CategoryID")
   @@map("Interest")
+}
+
+model InterestCategory {
+  interestCategoryId Int    @id @default(autoincrement()) @map("InterestCategoryID")
+  categoryName       String @unique @db.VarChar(100) @map("CategoryName")
+
+  interests Interest[]
+
+  @@map("Interest_Category")
 }
 
 model Match {
@@ -50,7 +62,6 @@ model Match {
 
   employeeOne Employee  @relation("MatchEmployeeOne", fields: [employeeOneId], references: [employeeId], onDelete: Cascade, onUpdate: Cascade)
   employeeTwo Employee  @relation("MatchEmployeeTwo", fields: [employeeTwoId], references: [employeeId], onDelete: Cascade, onUpdate: Cascade)
-  meetings    Meeting[]
 
   @@index([employeeOneId], map: "IX_Match_EmployeeOneID")
   @@index([employeeTwoId], map: "IX_Match_EmployeeTwoID")
