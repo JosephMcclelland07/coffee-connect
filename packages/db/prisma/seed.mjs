@@ -42,23 +42,22 @@ const employees = [
   { firstName: "Poppy", lastName: "Bailey", email: "poppy.bailey@example.com", officeLocation: "London", department: "Engineering", role: "Backend Developer" },
 ];
 
-const interestNames = [
-  "Hiking",
-  "Cooking",
-  "Reading",
-  "Photography",
-  "Cycling",
-  "Running",
-  "Board Games",
-  "Gardening",
-  "Travel",
-  "Live Music",
-  "Yoga",
-  "Coffee",
-  "Technology",
-  "Art",
-  "Volunteering",
+const interestCategoryDefinitions = [
+  { categoryName: "Outdoors", interests: ["Hiking", "Cycling", "Running", "Gardening"] },
+  { categoryName: "Food & Drink", interests: ["Cooking", "Coffee"] },
+  { categoryName: "Creative", interests: ["Reading", "Photography", "Live Music", "Art"] },
+  { categoryName: "Social", interests: ["Board Games", "Travel", "Volunteering"] },
+  { categoryName: "Wellness", interests: ["Yoga"] },
+  { categoryName: "Technology", interests: ["Technology"] },
 ];
+
+const interestNames = interestCategoryDefinitions.flatMap(({ interests }) => interests);
+const interestCategoryNames = interestCategoryDefinitions.map(({ categoryName }) => categoryName);
+const interestToCategoryName = new Map(
+  interestCategoryDefinitions.flatMap(({ categoryName, interests }) =>
+    interests.map((interestName) => [interestName, categoryName]),
+  ),
+);
 
 const adminEmails = ["noah.patel@example.com", "freya.morgan@example.com"];
 
@@ -86,30 +85,86 @@ const matches = [
 ];
 
 const prisma = new PrismaClient({ adapter });
+const prismaWithCategories = /** @type {any} */ (prisma);
+
+/** @param {any} client */
+const upsertInterestCategoriesAndAssignments = async (client) => {
+  await Promise.all(
+    interestCategoryNames.map((categoryName) =>
+      client.interestCategory.upsert({
+        where: { categoryName },
+        create: { categoryName },
+        update: {},
+      }),
+    ),
+  );
+
+  await Promise.all(
+    interestNames.map((interestName) => {
+      const categoryName = interestToCategoryName.get(interestName);
+      if (!categoryName) {
+        throw new Error(`Missing category mapping for interest: ${interestName}`);
+      }
+
+      return client.interest.upsert({
+        where: { interestName },
+        create: {
+          interestName,
+          category: { connect: { categoryName } },
+        },
+        update: {
+          category: { connect: { categoryName } },
+        },
+      });
+    }),
+  );
+};
 
 try {
   const existingEmployeeCount = await prisma.employee.count();
   if (existingEmployeeCount > 0) {
-    const [employeeCount, interestCount, administratorCount, matchCount, meetingCount] = await Promise.all([
+    const [
+      employeeCount,
+      interestCount,
+      administratorCount,
+      matchCount,
+      meetingCount,
+      interestCategoryCount,
+      categorizedInterestCount,
+    ] = await Promise.all([
       prisma.employee.count({ where: { email: { in: employees.map(({ email }) => email) } } }),
       prisma.interest.count({ where: { interestName: { in: interestNames } } }),
       prisma.hRAdministrator.count({ where: { employee: { email: { in: adminEmails } } } }),
       prisma.match.count(),
       prisma.meeting.count(),
+      prismaWithCategories.interestCategory.count({ where: { categoryName: { in: interestCategoryNames } } }),
+      prismaWithCategories.interest.count({ where: { interestName: { in: interestNames }, category: { isNot: null } } }),
     ]);
 
-    const seedIsComplete =
+    const baseSeedIsComplete =
       employeeCount === employees.length &&
       interestCount === interestNames.length &&
       administratorCount === adminEmails.length &&
       matchCount >= matches.length &&
       meetingCount >= matches.length;
 
-    if (!seedIsComplete) {
+    if (!baseSeedIsComplete) {
       throw new Error("Refusing to seed a non-empty database with incomplete or unrelated seed data.");
     }
 
-    console.log("Seed data already exists; skipping.");
+    const interestCategoriesAreComplete =
+      interestCategoryCount === interestCategoryNames.length &&
+      categorizedInterestCount === interestNames.length;
+
+    if (interestCategoriesAreComplete) {
+      console.log("Seed data already exists; skipping.");
+    } else {
+      await prisma.$transaction(async (transaction) => {
+        await upsertInterestCategoriesAndAssignments(transaction);
+      });
+
+      console.log("Interest categories synchronized for existing seed data.");
+    }
   } else {
     await prisma.$transaction(async (transaction) => {
       await Promise.all(
@@ -122,15 +177,7 @@ try {
         ),
       );
 
-      await Promise.all(
-        interestNames.map((interestName) =>
-          transaction.interest.upsert({
-            where: { interestName },
-            create: { interestName },
-            update: {},
-          }),
-        ),
-      );
+      await upsertInterestCategoriesAndAssignments(transaction);
 
       await Promise.all(
         adminEmails.map(async (email) => {

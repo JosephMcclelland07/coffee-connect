@@ -30,10 +30,22 @@ model Employee {
 model Interest {
   interestId   Int    @id @default(autoincrement()) @map("InterestID")
   interestName String @unique @db.VarChar(100) @map("InterestName")
+  categoryId   Int?   @map("CategoryID")
 
+  category  InterestCategory? @relation(fields: [categoryId], references: [interestCategoryId], onDelete: SetNull, onUpdate: Cascade)
   employees EmployeeInterest[]
 
+  @@index([categoryId], map: "IX_Interest_CategoryID")
   @@map("Interest")
+}
+
+model InterestCategory {
+  interestCategoryId Int    @id @default(autoincrement()) @map("InterestCategoryID")
+  categoryName       String @unique @db.VarChar(100) @map("CategoryName")
+
+  interests Interest[]
+
+  @@map("Interest_Category")
 }
 
 model Match {
