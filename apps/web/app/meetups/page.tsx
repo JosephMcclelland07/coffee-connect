@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { headers } from "next/headers";
 import { SiteFooter, SiteHeader } from "../site-chrome";
+import OutlookCalendar from "../../components/outlook-calendar";
 import SpinWheel from "../../components/spin-wheel";
 import MeetupChat from "../../components/meetup-chat";
 
@@ -105,9 +104,16 @@ export default async function MeetupsPage() {
 	const currentUser = demoPeople.find((person) => person.id === userId) ?? demoPeople[demoPeople.length - 1];
 	const wheelPeople = demoPeople.filter((person) => person.id !== currentUser.id);
 
+export default function MeetupsPage() {
 	return (
 		<>
 			<SiteHeader activePage="meetups" />
+			<main className="page-width" id="meetups">
+				<div className="section-heading meetup-page-heading">
+					<p className="eyebrow">Coffee Connect</p>
+					<h1>Meetups</h1>
+				</div>
+				<OutlookCalendar />
 			<main>
 				<section className="meetups-section" id="meetups">
 					<div className="page-width">

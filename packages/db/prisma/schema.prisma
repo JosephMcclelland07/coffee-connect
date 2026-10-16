@@ -11,6 +11,7 @@ model Employee {
   firstName       String   @db.VarChar(100) @map("FirstName")
   lastName        String   @db.VarChar(100) @map("LastName")
   email           String   @unique @db.VarChar(255) @map("Email")
+  passwordHash    String?  @db.VarChar(255) @map("PasswordHash")
   officeLocation  String?  @db.VarChar(100) @map("OfficeLocation")
   department      String?  @db.VarChar(100) @map("Department")
   role            String?  @db.VarChar(100) @map("Role")
@@ -21,6 +22,9 @@ model Employee {
   interests           EmployeeInterest[]
   matchesAsEmployeeOne Match[] @relation("MatchEmployeeOne")
   matchesAsEmployeeTwo Match[] @relation("MatchEmployeeTwo")
+  hrAdministrator HRAdministrator?
+  microsoftAccount MicrosoftAccount?
+  organisedMeetings Meeting[] @relation("MeetingOrganiser")
 
   @@index([email], map: "IX_Employee_Email")
   @@map("Employee")
@@ -91,3 +95,63 @@ model Notification {
   @@map("Notification")
 }
 
+model HRAdministrator {
+  adminId         Int    @id @default(autoincrement()) @map("AdminID")
+  employeeId      Int    @unique @map("EmployeeID")
+  permissionLevel String @db.VarChar(50) @map("PermissionLevel")
+
+  employee Employee @relation(fields: [employeeId], references: [employeeId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([employeeId], map: "IX_HRAdministrator_EmployeeID")
+  @@map("HR_Administrator")
+}
+
+model Meeting {
+  meetingId   Int      @id @default(autoincrement()) @map("MeetingID")
+  matchId     Int      @map("MatchID")
+  meetingDate DateTime @db.Date @map("MeetingDate")
+  startTime   DateTime @db.Time(0) @map("StartTime")
+  endTime     DateTime @db.Time(0) @map("EndTime")
+  location    String?  @db.VarChar(255) @map("Location")
+  status      String   @db.VarChar(50) @map("Status")
+  startsAt    DateTime? @db.DateTime(3)
+  endsAt      DateTime? @db.DateTime(3)
+  timeZone    String? @db.VarChar(100)
+  organiserId Int?
+  graphEventId String? @db.VarChar(512)
+  outlookUrl String? @db.Text
+  bookingKey String? @unique @db.VarChar(64)
+  activeMatchId Int? @unique
+  syncOperation String? @db.VarChar(20)
+  syncUpdatedAt DateTime? @db.DateTime(3)
+
+  match Match @relation(fields: [matchId], references: [matchId], onDelete: Cascade, onUpdate: Cascade)
+  organiser Employee? @relation("MeetingOrganiser", fields: [organiserId], references: [employeeId], onDelete: SetNull)
+
+  @@index([matchId], map: "IX_Meeting_MatchID")
+  @@map("Meeting")
+}
+
+model MicrosoftAccount {
+  employeeId Int @id
+  tenantId String @db.VarChar(100)
+  objectId String @db.VarChar(100)
+  homeAccountId String @db.VarChar(255)
+  mailbox String @db.VarChar(255)
+  encryptedCache String @db.LongText
+  timeZone String @default("Europe/London") @db.VarChar(100)
+  workStart Int @default(540)
+  workEnd Int @default(1020)
+  connected Boolean @default(true)
+  employee Employee @relation(fields: [employeeId], references: [employeeId], onDelete: Cascade)
+
+  @@unique([tenantId, objectId])
+}
+
+model ApiSession {
+  id String @id @db.VarChar(128)
+  encryptedData String @db.LongText
+  expiresAt DateTime @db.DateTime(3)
+
+  @@index([expiresAt])
+}

@@ -1,7 +1,4 @@
 import Link from "next/link";
-import { headers } from "next/headers";
-
-const validAuthRoles = new Set(["employee", "hr_admin"]);
 
 type SiteHeaderProps = {
 	activePage: "home" | "meetups" | "personal";
@@ -11,10 +8,6 @@ export async function SiteHeader({ activePage }: SiteHeaderProps) {
 	const isHome = activePage === "home";
 	const isMeetups = activePage === "meetups";
 	const isPersonal = activePage === "personal";
-	const requestHeaders = await headers();
-	const userId = requestHeaders.get("x-user-id");
-	const userRole = requestHeaders.get("x-user-role");
-	const isLoggedIn = Boolean(userId && userRole && validAuthRoles.has(userRole));
 
 	return (
 		<header className="site-header">
@@ -44,8 +37,8 @@ export async function SiteHeader({ activePage }: SiteHeaderProps) {
 					>
 						Personal
 					</Link>
-					<Link className="signup-link" href={isLoggedIn ? "/login" : "/signup"}>
-						{isLoggedIn ? "Sign out" : "Sign up"}
+					<Link className="signup-link" href="/meetups">
+						Account
 					</Link>
 				</nav>
 			</div>
