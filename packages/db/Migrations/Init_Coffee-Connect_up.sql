@@ -19,11 +19,25 @@ CREATE TABLE IF NOT EXISTS Employee (
 );
 
 /* ==========================================
+   INTEREST CATEGORY
+   ========================================== */
+CREATE TABLE IF NOT EXISTS Interest_Category (
+    InterestCategoryID INT AUTO_INCREMENT PRIMARY KEY,
+    CategoryName VARCHAR(100) NOT NULL UNIQUE
+);
+
+/* ==========================================
    INTEREST
    ========================================== */
 CREATE TABLE IF NOT EXISTS Interest (
     InterestID INT AUTO_INCREMENT PRIMARY KEY,
-    InterestName VARCHAR(100) NOT NULL UNIQUE
+    InterestName VARCHAR(100) NOT NULL UNIQUE,
+    CategoryID INT NULL,
+    CONSTRAINT Interest_CategoryID_fkey
+        FOREIGN KEY (CategoryID)
+        REFERENCES Interest_Category(InterestCategoryID)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
 );
 
 /* ==========================================
@@ -116,4 +130,7 @@ CREATE INDEX IX_EmployeeInterest_EmployeeID
 
 CREATE INDEX IX_EmployeeInterest_InterestID
     ON Employee_Interest (InterestID);
+
+CREATE INDEX IX_Interest_CategoryID
+    ON Interest (CategoryID);
 
