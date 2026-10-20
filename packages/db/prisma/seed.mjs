@@ -16,12 +16,25 @@ if (!databaseUrl) {
 }
 
 const parsedUrl = new URL(databaseUrl);
+
+/** @param {string} value */
+const parseBoolean = (value) => ["1", "true", "yes", "on"].includes(value.toLowerCase());
+
+const connectTimeoutParam = parsedUrl.searchParams.get("connectTimeout");
+const acquireTimeoutParam = parsedUrl.searchParams.get("acquireTimeout");
+const connectionLimitParam = parsedUrl.searchParams.get("connectionLimit");
+const allowPublicKeyRetrievalParam = parsedUrl.searchParams.get("allowPublicKeyRetrieval");
+
 const adapter = new PrismaMariaDb({
   host: parsedUrl.hostname,
   port: Number(parsedUrl.port || 3306),
   user: decodeURIComponent(parsedUrl.username),
   password: decodeURIComponent(parsedUrl.password),
   database: decodeURIComponent(parsedUrl.pathname.slice(1)),
+  ...(connectTimeoutParam ? { connectTimeout: Number(connectTimeoutParam) } : {}),
+  ...(acquireTimeoutParam ? { acquireTimeout: Number(acquireTimeoutParam) } : {}),
+  ...(connectionLimitParam ? { connectionLimit: Number(connectionLimitParam) } : {}),
+  ...(allowPublicKeyRetrievalParam ? { allowPublicKeyRetrieval: parseBoolean(allowPublicKeyRetrievalParam) } : {}),
 });
 
 const employees = [
