@@ -7,7 +7,7 @@ import styles from "./outlook-calendar.module.css";
 
 type Connection = { configured: boolean; connected: boolean; employeeId?: number; mailbox?: string; csrfToken?: string; timeZone?: string; workStart?: number; workEnd?: number };
 type Match = { matchId: number; colleague: { firstName: string; lastName: string } };
-type Person = { id: string; name: string; interests: string[] };
+type Person = { id: string; name: string; interests: string[]; categories: string[] };
 type Slot = { start: string; end: string };
 type Meeting = { meetingId: number; matchId: number; startsAt: string; endsAt: string; location: string; status: string; organiserId: number; outlookUrl?: string; syncOperation?: string };
 const api = "/api/coffee";
@@ -95,6 +95,25 @@ export default function OutlookCalendar() {
       </section>
       {error && <p className={styles.error} role="alert">{error}</p>}
       {notice && <p className={styles.notice} role="status">{notice}</p>}
+      {connection && !connection.connected && <section className={styles.bookingPreview} aria-label="Coffee meetup dashboard">
+        <article className={styles.previewCard}>
+          <h2>Book a coffee meetup</h2>
+          <p>Connect Outlook to find a time that works for both of you.</p>
+          <div className={styles.previewDurations} aria-hidden="true">
+            <span>30 min</span><span>45 min</span><span>1 hour</span><span>Custom</span>
+          </div>
+          <div className={styles.previewDate}>
+            <span>Choose a day</span>
+            <span><CalendarDays size={16} aria-hidden="true" /> Available times appear here</span>
+          </div>
+          <button type="button" disabled>{connection.configured ? "Connect Outlook to continue" : "Outlook setup pending"}</button>
+        </article>
+        <article className={styles.previewCard}>
+          <h2>Your Coffee Match</h2>
+          <div className={styles.previewAvatar} aria-hidden="true">?</div>
+          <p>Your colleague match will appear here when Outlook is connected.</p>
+        </article>
+      </section>}
       {connection?.connected && <>
         <details className={styles.preferences}>
           <summary>Calendar preferences</summary>
@@ -114,6 +133,7 @@ export default function OutlookCalendar() {
             <h2>Your next conversation</h2>
             {people.length > 1 ? <SpinWheel currentUserId={String(connection.employeeId)} people={people}
               currentUserInterests={people.find((person) => person.id === String(connection.employeeId))?.interests || []}
+              currentUserCategories={people.find((person) => person.id === String(connection.employeeId))?.categories || []}
               resolveWinner={async () => {
                 const match = await request<{ matchId: number; colleagueId: string }>("/calendar/matches", connection.csrfToken, "POST");
                 await load(); setMatchId(String(match.matchId)); setEditing(null); clearSlots(); return match.colleagueId;

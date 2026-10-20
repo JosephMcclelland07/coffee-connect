@@ -2,79 +2,8 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { SiteFooter, SiteHeader } from "../site-chrome";
 import OutlookCalendar from "../../components/outlook-calendar";
-import SpinWheel from "../../components/spin-wheel";
-import MeetupChat from "../../components/meetup-chat";
 
 const validAuthRoles = new Set(["employee", "hr_admin"]);
-
-const demoPeople = [
-	{
-		id: "employee-1",
-		name: "Jordan Lee",
-		interests: ["Hiking", "Board games", "AI", "Coffee"],
-	},
-	{
-		id: "employee-2",
-		name: "Priya Shah",
-		interests: ["Running", "Travel", "Coffee", "Design"],
-	},
-	{
-		id: "employee-3",
-		name: "Sam Osei",
-		interests: ["AI", "Travel", "Cooking", "Coffee"],
-	},
-	{
-		id: "employee-4",
-		name: "Alex Chen",
-		interests: ["Photography", "Travel", "Hiking", "Film"],
-	},
-	{
-		id: "employee-5",
-		name: "Maya Patel",
-		interests: ["Books", "Yoga", "Cooking", "Design"],
-	},
-	{
-		id: "employee-6",
-		name: "Chris Morgan",
-		interests: ["Music", "Football", "Podcasts", "Coffee"],
-	},
-	{
-		id: "employee-7",
-		name: "Nina Rossi",
-		interests: ["Cycling", "AI", "Travel", "Books"],
-	},
-	{
-		id: "employee-8",
-		name: "Leo Turner",
-		interests: ["Gaming", "Board games", "Film", "Cooking"],
-	},
-	{
-		id: "employee-9",
-		name: "You",
-		interests: ["Coffee", "AI", "Travel", "Board games"],
-	},
-];
-
-const demoMeetup = {
-	otherPersonName: "Jordan Lee",
-	date: "Saturday, 24 October 2026",
-	time: "10:30 am",
-	location: "Example Coffee House, Sample Street",
-	messages: [
-		{
-			id: "demo-1",
-			from: "contact" as const,
-			text: "Looking forward to meeting up. Does 10:30 still work for you?",
-			time: "9:14 am",
-		},
-		{
-			id: "demo-2",
-			from: "you" as const,
-			text: "Yes, see you there!",
-			time: "9:21 am",
-		},
-	],
-};
 
 const demoPreviousMeetups = [
 	{
@@ -103,8 +32,6 @@ export default async function MeetupsPage() {
 	const userRole = requestHeaders.get("x-user-role");
 	const isLoggedIn = Boolean(userId && userRole && validAuthRoles.has(userRole));
 
-	const currentUser = demoPeople.find((person) => person.id === userId) ?? demoPeople[demoPeople.length - 1];
-	const wheelPeople = demoPeople.filter((person) => person.id !== currentUser.id);
 	return (
 		<>
 			<SiteHeader activePage="meetups" />
@@ -113,83 +40,30 @@ export default async function MeetupsPage() {
 					<div className="page-width">
 						<div className="section-heading meetup-page-heading">
 							<p className="eyebrow">Coffee Connect</p>
-							<h1>Meetups</h1>
-						</div>
-						<div className="meetups-layout">
-							<div className="meetups-overview">
-								<h2>What are they?</h2>
-								<p>
-                                    This is where you will select the next person to meet up with. Spin now to find your next person with similar interests
-								</p>
-								<Link className="text-link" href="/#how-it-works">
-									How it works <span aria-hidden="true">→</span>
-								</Link>
-							</div>
-							<div className="wheel-panel">
-								<SpinWheel
-									currentUserId={currentUser.id}
-									currentUserInterests={currentUser.interests}
-									people={[currentUser, ...wheelPeople]}
-								/>
-								<p className="wheel-caption" id="wheel-caption">
-									Everyone has a chance to be selected. Colleagues with more shared interests
-									have a higher chance of being matched.
-								</p>
-							</div>
+							<h1>Your Meetups</h1>
 						</div>
 					</div>
 				</section>
 
-				<section className="upcoming-section" id="outlook-calendar">
+				<section className="meetups-dashboard-section" id="outlook-calendar">
 					<div className="page-width">
-						<div className="upcoming-heading">
-							<p className="eyebrow">Availability and booking</p>
-							<h2>Plan with Outlook</h2>
+						<div className="meetups-dashboard-heading">
+							<div>
+								<h2>Find time for a coffee</h2>
+								<p>View your Outlook calendar, find a free slot, and book a coffee meetup with someone new.</p>
+							</div>
 						</div>
 						<OutlookCalendar />
 					</div>
 				</section>
 
-				<section className="upcoming-section" id="upcoming-meetups">
-					<div className="page-width">
-						<div className="upcoming-heading">
-							<p className="eyebrow">Your schedule</p>
-							<h2>Upcoming meetups</h2>
-						</div>
-						<div className="upcoming-meetup">
-							<div className="meetup-details">
-								<p className="eyebrow">Demo meetup</p>
-								<h3 className="meetup-person-name">
-									{demoMeetup.otherPersonName}
-								</h3>
-								<dl className="meetup-facts">
-									<div>
-										<dt>Date</dt>
-										<dd>{demoMeetup.date}</dd>
-									</div>
-									<div>
-										<dt>Time</dt>
-										<dd>{demoMeetup.time}</dd>
-									</div>
-									<div className="meetup-fact-location">
-										<dt>Location</dt>
-										<dd>{demoMeetup.location}</dd>
-									</div>
-								</dl>
-							</div>
-							<MeetupChat
-								contactName={demoMeetup.otherPersonName}
-								initialMessages={demoMeetup.messages}
-							/>
-						</div>
-					</div>
-				</section>
-
 				<section className="previous-section" id="previous-meetups">
 					<div className="page-width">
-						<div className="upcoming-heading">
-							<p className="eyebrow">Your history</p>
-							<h2>Previous meetups</h2>
+						<div className="past-meetups-heading">
+							<div>
+								<h2>Past Meetups</h2>
+								<p>Who you’ve met with</p>
+							</div>
 						</div>
 						<ul className="previous-meetups-list">
 							{demoPreviousMeetups.map((meetup) => (

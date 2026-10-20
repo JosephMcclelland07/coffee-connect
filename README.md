@@ -38,13 +38,19 @@ Merge the settings from [.env.example](.env.example) into your existing root `.e
 | `JWT_SECRET` | Independent random secret of at least 32 bytes for password-login tokens |
 | `PORT` | Express port, initially 4000 |
 
-Generate two independent random values by running this command twice in your own terminal. Put one value in `SESSION_SECRET` and the other in `TOKEN_ENCRYPTION_KEY`:
+Generate independent random values in your own terminal. Use a new value for each secret; do not reuse one value across settings.
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Use generated values for `SESSION_SECRET` and `JWT_SECRET`. For `TOKEN_ENCRYPTION_KEY`, generate 32 random bytes and encode them as Base64:
 
 ```bash
 node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
 ```
 
-These are secrets. Keep them out of source control and logs. Retain the encryption key across restarts: replacing it prevents the server from reading existing token caches and sessions. Plan a proper key rotation before changing it.
+These are secrets. Keep them out of source control and logs. Retain the encryption key across restarts: replacing it prevents the server from reading existing token caches and sessions. Plan a proper key rotation before changing it. Password login returns a server configuration error until `JWT_SECRET` is set to an independent value of at least 32 bytes.
 
 The frontend proxy defaults to `http://127.0.0.1:4000`. To change it, configure `API_ORIGIN` in `apps/web/.env.local`, using [apps/web/.env.example](apps/web/.env.example) as the reference. `API_ORIGIN` is a server setting, not a `NEXT_PUBLIC_` variable.
 

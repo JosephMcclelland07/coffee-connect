@@ -42,15 +42,16 @@ calendarRouter.get("/matches", async (req, res) => {
 });
 
 async function wheelPeople() {
-  return database().employee.findMany({ where: { isActive: true, microsoftAccount: { connected: true } },
-    select: { employeeId: true, firstName: true, lastName: true, interests: { select: { interest: { select: { interestName: true } } } } },
-    orderBy: { employeeId: "asc" }, take: 1000 });
+  return database().employee.findMany({ where: { isActive: true },
+    select: { employeeId: true, firstName: true, lastName: true, interests: { select: { interest: { select: { interestName: true, categoryId: true } } } } },
+    orderBy: { employeeId: "asc" } });
 }
 
 calendarRouter.get("/people", async (_req, res) => {
   const people = await wheelPeople();
   res.json(people.map((person) => ({ id: String(person.employeeId), name: `${person.firstName} ${person.lastName}`.trim(),
-    interests: person.interests.map((item) => item.interest.interestName) })));
+    interests: person.interests.map((item) => item.interest.interestName),
+    categories: [...new Set(person.interests.flatMap((item) => item.interest.categoryId === null ? [] : [String(item.interest.categoryId)]))] })));
 });
 
 calendarRouter.post("/matches", async (req, res) => {
@@ -58,9 +59,11 @@ calendarRouter.post("/matches", async (req, res) => {
   const people = await wheelPeople();
   const current = people.find((person) => person.employeeId === employeeId);
   const candidates = people.map((person) => ({ id: String(person.employeeId), person,
-    interests: person.interests.map((item) => item.interest.interestName) }));
+    interests: person.interests.map((item) => item.interest.interestName),
+    categories: [...new Set(person.interests.flatMap((item) => item.interest.categoryId === null ? [] : [String(item.interest.categoryId)]))] }));
   const winner = selectWeightedPerson(candidates, String(employeeId),
-    current?.interests.map((item) => item.interest.interestName) ?? []);
+    current?.interests.map((item) => item.interest.interestName) ?? [], undefined,
+    current?.interests.flatMap((item) => item.interest.categoryId === null ? [] : [String(item.interest.categoryId)]) ?? []);
   if (!winner) throw new AppError(409, "No connected colleagues are available yet.");
   const selected = winner.person.person;
   const existing = await database().match.findFirst({ where: { OR: [

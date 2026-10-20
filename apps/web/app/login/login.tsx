@@ -12,6 +12,8 @@ export default function LoginPage() {
 	const [pending, setPending] = useState(false);
 	const [error, setError] = useState("");
 	const [message, setMessage] = useState("");
+	const [microsoftConfigured, setMicrosoftConfigured] = useState(false);
+	const [microsoftStatusLoaded, setMicrosoftStatusLoaded] = useState(false);
 
 	useEffect(() => {
 		if (new URLSearchParams(window.location.search).get("registered") === "1") setMessage("Account created. Log in to continue.");
@@ -21,6 +23,15 @@ export default function LoginPage() {
 				if (response.ok) setAccount((await response.json()).account);
 			})
 			.catch(() => {});
+		fetch("/api/coffee/auth/microsoft/status", { signal: controller.signal })
+			.then(async (response) => {
+				if (response.ok) {
+					const status = await response.json() as { configured?: boolean };
+					setMicrosoftConfigured(status.configured === true);
+				}
+				setMicrosoftStatusLoaded(true);
+			})
+			.catch(() => setMicrosoftStatusLoaded(true));
 		return () => controller.abort();
 	}, []);
 
@@ -88,15 +99,24 @@ export default function LoginPage() {
 			<section className={styles.loginPanel} aria-labelledby="login-title">
 				<div className={styles.formWrap}>
 					<p className={styles.kicker}>YOUR ACCOUNT</p>
-					<a className={styles.submitButton} href="/api/coffee/auth/microsoft/connect">
-						Sign in with Microsoft
-					</a>
+					{microsoftConfigured ? (
+						<a className={styles.microsoftButton} href="/api/coffee/auth/microsoft/connect">Sign in with Microsoft</a>
+					) : (
+						<div className={styles.microsoftGroup}>
+							<button className={styles.microsoftButton} type="button" disabled>
+								Sign in with Microsoft
+							</button>
+							<p className={styles.microsoftSetupNote} role="status">
+								{microsoftStatusLoaded ? "Microsoft work sign-in needs Entra setup." : "Checking Microsoft sign-in…"}
+							</p>
+						</div>
+					)}
 					<Link className={styles.signupLink} href="/signup">
 						Not a member? Sign up!
 					</Link>
 					<h1 id="login-title">{account ? `Welcome, ${account.name}` : mode === "register" ? "Create account" : "Log in"}</h1>
-					{error && <p role="alert">{error}</p>}
-					{message && <p role="status">{message}</p>}
+						{error && <p className={styles.errorMessage} role="alert">{error}</p>}
+						{message && <p className={styles.statusMessage} role="status">{message}</p>}
 					{account ? (
 						<>
 							<p className={styles.intro}>{account.email}</p>
