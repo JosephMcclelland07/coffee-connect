@@ -176,10 +176,18 @@ h2,
 .hero-image {
 	display: block;
 	width: 100%;
+	max-width: 100%;
 	height: auto;
 	max-height: 610px;
 	object-fit: cover;
 	object-position: center 56%;
+}
+
+.hero-image-wrap img {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	height: auto;
 }
 
 .meetups-section {

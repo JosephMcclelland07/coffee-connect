@@ -49,29 +49,31 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "api" });
 });
 
-app.get("/interest-categories", async (req, res) => {
-  const categories = await prisma.interestCategory.findMany({
-    where: { interests: { some: {} } },
-    select: {
-      interestCategoryId: true,
-      categoryName: true,
-      interests: {
-        select: { interestId: true, interestName: true },
-        orderBy: { interestId: "asc" },
+app.get("/interest-categories", async (req, res, next) => {
+  try {
+    const categories = await prisma.interestCategory.findMany({
+      where: { interests: { some: {} } },
+      select: {
+        interestCategoryId: true,
+        categoryName: true,
+        interests: {
+          select: { interestId: true, interestName: true },
+          orderBy: { interestId: "asc" },
+        },
       },
-    },
-    orderBy: { interestCategoryId: "asc" },
-  });
+      orderBy: { interestCategoryId: "asc" },
+    });
 
-  res.json({ categories, requestId: req.requestId });
+    res.json({ categories, requestId: req.requestId });
+  } catch (error) {
+    if ((error as { code?: string }).code === "P2021") {
+      res.json({ categories: [], requestId: req.requestId });
+      return;
+    }
+    next(error);
+  }
 });
 
-app.get("/me", requireAuth, (req, res) => {
-  res.json({
-    id: req.user?.id,
-    role: req.user?.role,
-    requestId: req.requestId,
-  });
 app.get("/me", requireAuth, async (req, res, next) => {
   try {
     const employee = await database().employee.findUnique({
@@ -136,6 +138,9 @@ app.post("/employees", requireAuth, requireRole("hr_admin"), validateCreateEmplo
     });
   } catch (error) {
     next(error);
+  }
+});
+
 app.get("/employees", requireAuth, requireRole("hr_admin"), async (req, res) => {
   const employees = await prisma.employee.findMany({
     orderBy: { employeeId: "asc" },
@@ -220,15 +225,6 @@ app.get("/employees/:employeeId", requireAuth, requireRole("hr_admin"), async (r
   }
 
   res.json({ employee, requestId: req.requestId });
-});
-
-app.post("/employees", requireAuth, requireRole("hr_admin"), validateCreateEmployee, async (req, res) => {
-  const employee = await prisma.employee.create({ data: req.body });
-  res.status(201).json({
-    employee,
-    createdBy: req.user?.id,
-    requestId: req.requestId,
-  });
 });
 
 // Throwing AppError demonstrates controlled error response format.

@@ -1,10 +1,18 @@
 import { strict as assert } from "node:assert";
+import type { Server } from "node:http";
 import { test } from "node:test";
 import express, { type Request, type Response } from "express";
 import { authContextMiddleware, requireAuth } from "../middleware/auth";
 import { requireCsrf } from "../routes/microsoft-auth";
 import { graphRequest, GraphError } from "./microsoft";
 import { app } from "../index";
+import { database } from "../lib/database";
+import { prisma } from "../lib/prisma";
+
+function closeTestServer(server: Server): void {
+  server.close();
+  server.closeAllConnections();
+}
 
 test("forged user and admin headers do not authenticate requests", async () => {
   const app = express();
@@ -18,7 +26,7 @@ test("forged user and admin headers do not authenticate requests", async () => {
     assert.ok(address && typeof address !== "string");
     const response = await fetch(`http://127.0.0.1:${address.port}/protected`, { headers: { "x-user-id": "1", "x-user-role": "hr_admin" } });
     assert.equal(response.status, 401);
-  } finally { await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve())); }
+  } finally { closeTestServer(server); }
 });
 
 test("CSRF protection requires both the correct origin and token", () => {
@@ -55,10 +63,16 @@ test("application mounts calendar/auth routes and rejects malformed JSON safely"
     const status = await fetch(`${base}/auth/microsoft/status`);
     assert.equal(status.status, 200);
     assert.equal(typeof (await status.json()).configured, "boolean");
+    const categories = await fetch(`${base}/interest-categories`);
+    assert.equal(categories.status, 200);
+    assert.ok(Array.isArray((await categories.json()).categories));
     assert.equal((await fetch(`${base}/calendar/matches`)).status, 401);
     assert.equal((await fetch(`${base}/me`)).status, 401);
     const invalid = await fetch(`${base}/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{" });
     assert.equal(invalid.status, 400);
     assert.equal((await invalid.json()).error, "Invalid JSON request body.");
-  } finally { await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve())); }
+  } finally {
+    closeTestServer(server);
+    await Promise.all([database().$disconnect(), prisma.$disconnect()]);
+  }
 });

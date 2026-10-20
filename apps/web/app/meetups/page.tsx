@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { headers } from "next/headers";
 import { SiteFooter, SiteHeader } from "../site-chrome";
 import OutlookCalendar from "../../components/outlook-calendar";
 import SpinWheel from "../../components/spin-wheel";
@@ -103,17 +105,9 @@ export default async function MeetupsPage() {
 
 	const currentUser = demoPeople.find((person) => person.id === userId) ?? demoPeople[demoPeople.length - 1];
 	const wheelPeople = demoPeople.filter((person) => person.id !== currentUser.id);
-
-export default function MeetupsPage() {
 	return (
 		<>
 			<SiteHeader activePage="meetups" />
-			<main className="page-width" id="meetups">
-				<div className="section-heading meetup-page-heading">
-					<p className="eyebrow">Coffee Connect</p>
-					<h1>Meetups</h1>
-				</div>
-				<OutlookCalendar />
 			<main>
 				<section className="meetups-section" id="meetups">
 					<div className="page-width">
@@ -138,11 +132,21 @@ export default function MeetupsPage() {
 									people={[currentUser, ...wheelPeople]}
 								/>
 								<p className="wheel-caption" id="wheel-caption">
-									Rigged to stop on the person with the most shared interests. If top
-									matches tie, the winner is selected with secure randomness.
+									Everyone has a chance to be selected. Colleagues with more shared interests
+									have a higher chance of being matched.
 								</p>
 							</div>
 						</div>
+					</div>
+				</section>
+
+				<section className="upcoming-section" id="outlook-calendar">
+					<div className="page-width">
+						<div className="upcoming-heading">
+							<p className="eyebrow">Availability and booking</p>
+							<h2>Plan with Outlook</h2>
+						</div>
+						<OutlookCalendar />
 					</div>
 				</section>
 
