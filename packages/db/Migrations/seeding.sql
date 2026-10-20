@@ -28,26 +28,51 @@ VALUES
     ('Theo', 'Reed', 'theo.reed@example.com', 'Manchester', 'Product', 'Product Designer', TRUE, CURRENT_TIMESTAMP),
     ('Lily', 'Foster', 'lily.foster@example.com', 'Bristol', 'Customer Success', 'Customer Success Manager', TRUE, CURRENT_TIMESTAMP),
     ('Oscar', 'Murphy', 'oscar.murphy@example.com', 'Cardiff', 'Finance', 'Management Accountant', TRUE, CURRENT_TIMESTAMP),
-    ('Poppy', 'Bailey', 'poppy.bailey@example.com', 'London', 'Engineering', 'Backend Developer', TRUE, CURRENT_TIMESTAMP);
+    ('Poppy', 'Bailey', 'poppy.bailey@example.com', 'London', 'Engineering', 'Backend Developer', TRUE, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+    FirstName = VALUES(FirstName),
+    LastName = VALUES(LastName),
+    OfficeLocation = VALUES(OfficeLocation),
+    Department = VALUES(Department),
+    Role = VALUES(Role),
+    IsActive = VALUES(IsActive);
 
 
-INSERT INTO Interest (InterestName)
+INSERT INTO Interest_Category (CategoryName)
 VALUES
-    ('Hiking'),
-    ('Cooking'),
-    ('Reading'),
-    ('Photography'),
-    ('Cycling'),
-    ('Running'),
-    ('Board Games'),
-    ('Gardening'),
-    ('Travel'),
-    ('Live Music'),
-    ('Yoga'),
-    ('Coffee'),
-    ('Technology'),
-    ('Art'),
-    ('Volunteering');
+    ('Outdoors'),
+    ('Food & Drink'),
+    ('Creative'),
+    ('Social'),
+    ('Wellness'),
+    ('Technology')
+ON DUPLICATE KEY UPDATE
+    CategoryName = VALUES(CategoryName);
+
+INSERT INTO Interest (InterestName, CategoryID)
+SELECT
+    interest_seed.InterestName,
+    category.InterestCategoryID
+FROM (
+    SELECT 'Hiking' AS InterestName, 'Outdoors' AS CategoryName
+    UNION ALL SELECT 'Cycling', 'Outdoors'
+    UNION ALL SELECT 'Running', 'Outdoors'
+    UNION ALL SELECT 'Gardening', 'Outdoors'
+    UNION ALL SELECT 'Cooking', 'Food & Drink'
+    UNION ALL SELECT 'Coffee', 'Food & Drink'
+    UNION ALL SELECT 'Reading', 'Creative'
+    UNION ALL SELECT 'Photography', 'Creative'
+    UNION ALL SELECT 'Live Music', 'Creative'
+    UNION ALL SELECT 'Art', 'Creative'
+    UNION ALL SELECT 'Board Games', 'Social'
+    UNION ALL SELECT 'Travel', 'Social'
+    UNION ALL SELECT 'Volunteering', 'Social'
+    UNION ALL SELECT 'Yoga', 'Wellness'
+    UNION ALL SELECT 'Technology', 'Technology'
+) AS interest_seed
+JOIN Interest_Category category ON category.CategoryName = interest_seed.CategoryName
+ON DUPLICATE KEY UPDATE
+    CategoryID = VALUES(CategoryID);
 
 
 INSERT INTO `Match` (
@@ -59,7 +84,7 @@ INSERT INTO `Match` (
     EmployeeTwoID
 )
 SELECT
-    CURRENT_TIMESTAMP - INTERVAL (19 - match_seed.MatchOffset) DAY,
+    TIMESTAMP('2026-01-01 09:00:00') + INTERVAL match_seed.MatchOffset DAY,
     'Interest-Based',
     'Completed',
     FALSE,
@@ -89,5 +114,13 @@ FROM (
 ) AS match_seed
 JOIN Employee employee_one ON employee_one.Email = match_seed.EmployeeOneEmail
 JOIN Employee employee_two ON employee_two.Email = match_seed.EmployeeTwoEmail
+LEFT JOIN `Match` existing_match
+    ON existing_match.EmployeeOneID = employee_one.EmployeeID
+    AND existing_match.EmployeeTwoID = employee_two.EmployeeID
+    AND existing_match.MatchDate = TIMESTAMP('2026-01-01 09:00:00') + INTERVAL match_seed.MatchOffset DAY
+    AND existing_match.MatchType = 'Interest-Based'
+    AND existing_match.MatchStatus = 'Completed'
+    AND existing_match.GeneratedByWheelSpin = FALSE
+WHERE existing_match.MatchID IS NULL
 ORDER BY match_seed.MatchOffset;
 
