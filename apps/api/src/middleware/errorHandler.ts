@@ -5,6 +5,7 @@ type DatabaseLikeError = Error & {
   code?: string;
   errno?: number;
   sqlMessage?: string;
+  type?: string;
 };
 
 /**
@@ -16,6 +17,14 @@ type DatabaseLikeError = Error & {
  */
 export const errorHandlerMiddleware: ErrorRequestHandler = (err, req, res, _next) => {
   const error = err as DatabaseLikeError;
+
+  if (error.type === "entity.parse.failed" || error.type === "entity.too.large") {
+    res.status(error.type === "entity.too.large" ? 413 : 400).json({
+      error: error.type === "entity.too.large" ? "Request body is too large." : "Invalid JSON request body.",
+      requestId: req.requestId,
+    });
+    return;
+  }
 
   if (error instanceof AppError) {
     res.status(error.statusCode).json({
