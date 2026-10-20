@@ -755,10 +755,22 @@ h2,
 	font-size: 14px;
 }
 
+.interest-categories {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+
+.interest-category h3 {
+	margin: 0 0 10px;
+	font-size: 16px;
+	font-weight: 700;
+}
+
 .interest-options {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-	gap: 10px;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+	gap: 8px;
 }
 
 .interest-option {

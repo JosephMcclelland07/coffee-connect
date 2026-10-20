@@ -9,6 +9,7 @@ import { PrismaClient } from "@prisma/client";
 const prismaDirectory = dirname(fileURLToPath(import.meta.url));
 const packageDirectory = resolve(prismaDirectory, "..");
 loadEnv({ path: resolve(packageDirectory, "../../.env") });
+loadEnv({ path: resolve(packageDirectory, ".env") });
 
 const databaseUrl = process.env["DATABASE_URL"];
 if (!databaseUrl) {
@@ -43,12 +44,13 @@ const employees = [
 ];
 
 const interestCategoryDefinitions = [
-  { categoryName: "Outdoors", interests: ["Hiking", "Cycling", "Running", "Gardening"] },
-  { categoryName: "Food & Drink", interests: ["Cooking", "Coffee"] },
-  { categoryName: "Creative", interests: ["Reading", "Photography", "Live Music", "Art"] },
-  { categoryName: "Social", interests: ["Board Games", "Travel", "Volunteering"] },
-  { categoryName: "Wellness", interests: ["Yoga"] },
-  { categoryName: "Technology", interests: ["Technology"] },
+  { categoryName: "Sports", interests: ["Golf", "Football", "Basketball", "Tennis", "Swimming", "Running", "Cycling", "Cricket", "Rugby", "Fitness & sports"] },
+  { categoryName: "Food & drink", interests: ["Coffee & cafes", "Food & cooking", "Baking", "Trying new restaurants"] },
+  { categoryName: "Arts & culture", interests: ["Books & reading", "Live music", "Art & museums", "Films & cinema", "Photography", "Theatre"] },
+  { categoryName: "Outdoors & travel", interests: ["Walking & hiking", "Travel", "Gardening", "Pets & animals", "Camping"] },
+  { categoryName: "Games", interests: ["Board games", "Gaming", "Chess"] },
+  { categoryName: "Technology & making", interests: ["Technology & AI", "Crafts & DIY", "Coding"] },
+  { categoryName: "Community", interests: ["Volunteering", "Mentoring"] },
 ];
 
 const interestNames = interestCategoryDefinitions.flatMap(({ interests }) => interests);
@@ -84,7 +86,18 @@ const matches = [
 ];
 
 const prisma = new PrismaClient({ adapter });
-const prismaWithCategories = /** @type {any} */ (prisma);
+
+const legacyInterestAliases = [
+  { legacyName: "Hiking", interestName: "Walking & hiking" },
+  { legacyName: "Cooking", interestName: "Food & cooking" },
+  { legacyName: "Reading", interestName: "Books & reading" },
+  { legacyName: "Board Games", interestName: "Board games" },
+  { legacyName: "Live Music", interestName: "Live music" },
+  { legacyName: "Coffee", interestName: "Coffee & cafes" },
+  { legacyName: "Technology", interestName: "Technology & AI" },
+  { legacyName: "Art", interestName: "Art & museums" },
+  { legacyName: "Yoga", interestName: "Fitness & sports" },
+];
 
 /** @param {any} client */
 const upsertInterestCategoriesAndAssignments = async (client) => {
@@ -117,41 +130,59 @@ const upsertInterestCategoriesAndAssignments = async (client) => {
       });
     }),
   );
+
+  for (const { legacyName, interestName } of legacyInterestAliases) {
+  const [legacyInterest, currentInterest] = await Promise.all([
+    client.interest.findUnique({ where: { interestName: legacyName } }),
+    client.interest.findUnique({ where: { interestName } }),
+  ]);
+  if (!legacyInterest || !currentInterest) continue;
+  if (legacyInterest.interestId === currentInterest.interestId) {
+    if (legacyInterest.interestName !== interestName) {
+      await client.interest.update({
+        where: { interestId: legacyInterest.interestId },
+        data: { interestName },
+      });
+    }
+    continue;
+  }
+
+  const employeeInterests = await client.employeeInterest.findMany({
+    where: { interestId: legacyInterest.interestId },
+    select: { employeeId: true },
+  });
+  for (const { employeeId } of employeeInterests) {
+    await client.employeeInterest.upsert({
+      where: { employeeId_interestId: { employeeId, interestId: currentInterest.interestId } },
+      create: { employeeId, interestId: currentInterest.interestId },
+      update: {},
+    });
+  }
+  await client.interest.delete({ where: { interestId: legacyInterest.interestId } });
+  }
 };
 
 try {
   const existingEmployeeCount = await prisma.employee.count();
   if (existingEmployeeCount > 0) {
-    const [employeeCount, interestCount, matchCount, interestCategoryCount, categorizedInterestCount] = await Promise.all([
+    const [employeeCount, matchCount] = await Promise.all([
       prisma.employee.count({ where: { email: { in: employees.map(({ email }) => email) } } }),
-      prisma.interest.count({ where: { interestName: { in: interestNames } } }),
       prisma.match.count(),
-      prismaWithCategories.interestCategory.count({ where: { categoryName: { in: interestCategoryNames } } }),
-      prismaWithCategories.interest.count({ where: { interestName: { in: interestNames }, category: { isNot: null } } }),
     ]);
 
     const baseSeedIsComplete =
       employeeCount === employees.length &&
-      interestCount === interestNames.length &&
       matchCount >= matches.length;
 
     if (!baseSeedIsComplete) {
       throw new Error("Refusing to seed a non-empty database with incomplete or unrelated seed data.");
     }
 
-    const interestCategoriesAreComplete =
-      interestCategoryCount === interestCategoryNames.length &&
-      categorizedInterestCount === interestNames.length;
+    await prisma.$transaction(async (transaction) => {
+      await upsertInterestCategoriesAndAssignments(transaction);
+    });
 
-    if (interestCategoriesAreComplete) {
-      console.log("Seed data already exists; skipping.");
-    } else {
-      await prisma.$transaction(async (transaction) => {
-        await upsertInterestCategoriesAndAssignments(transaction);
-      });
-
-      console.log("Interest categories synchronized for existing seed data.");
-    }
+    console.log("Interest categories synchronized for existing seed data.");
   } else {
     await prisma.$transaction(async (transaction) => {
       await Promise.all(

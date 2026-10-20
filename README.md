@@ -121,6 +121,14 @@ The script uses the following shell environment variables; it does not load them
 
 Ensure these settings match your `.env` connection. The connection exported inside the setup script does not persist for the API after the script exits.
 
+Populate or synchronize the employee, interest, and category seed data with:
+
+```bash
+npm run db:seed
+```
+
+The profile editor loads categories from the public `GET /interest-categories` API endpoint. Set `NEXT_PUBLIC_API_URL` for the web app when the API is not available at `http://localhost:4000`.
+
 ### Prisma Configuration Troubleshooting
 
 The Prisma config is named `prisma7.config.ts`, rather than the default `prisma.config.ts`. If the setup script cannot discover the config or reports a missing datasource URL, use the explicit config after the database has been created:

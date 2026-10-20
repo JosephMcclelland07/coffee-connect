@@ -49,6 +49,29 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "api" });
 });
 
+app.get("/interest-categories", async (req, res) => {
+  const categories = await prisma.interestCategory.findMany({
+    where: { interests: { some: {} } },
+    select: {
+      interestCategoryId: true,
+      categoryName: true,
+      interests: {
+        select: { interestId: true, interestName: true },
+        orderBy: { interestId: "asc" },
+      },
+    },
+    orderBy: { interestCategoryId: "asc" },
+  });
+
+  res.json({ categories, requestId: req.requestId });
+});
+
+app.get("/me", requireAuth, (req, res) => {
+  res.json({
+    id: req.user?.id,
+    role: req.user?.role,
+    requestId: req.requestId,
+  });
 app.get("/me", requireAuth, async (req, res, next) => {
   try {
     const employee = await database().employee.findUnique({
@@ -148,7 +171,6 @@ app.get("/matches", requireAuth, requireRole("hr_admin"), async (req, res) => {
       employeeTwo: {
         select: { employeeId: true, firstName: true, lastName: true, email: true },
       },
-      meetings: true,
     },
     orderBy: { matchId: "asc" },
     take: 100,
@@ -184,41 +206,6 @@ app.get("/notifications", requireAuth, requireRole("hr_admin"), async (req, res)
   });
 
   res.json({ notifications, requestId: req.requestId });
-});
-
-app.get("/hr-administrators", requireAuth, requireRole("hr_admin"), async (req, res) => {
-  const administrators = await prisma.hRAdministrator.findMany({
-    include: {
-      employee: {
-        select: { employeeId: true, firstName: true, lastName: true, email: true },
-      },
-    },
-    orderBy: { adminId: "asc" },
-    take: 100,
-  });
-
-  res.json({ administrators, requestId: req.requestId });
-});
-
-app.get("/meetings", requireAuth, requireRole("hr_admin"), async (req, res) => {
-  const meetings = await prisma.meeting.findMany({
-    include: {
-      match: {
-        include: {
-          employeeOne: {
-            select: { employeeId: true, firstName: true, lastName: true, email: true },
-          },
-          employeeTwo: {
-            select: { employeeId: true, firstName: true, lastName: true, email: true },
-          },
-        },
-      },
-    },
-    orderBy: { meetingId: "asc" },
-    take: 100,
-  });
-
-  res.json({ meetings, requestId: req.requestId });
 });
 
 app.get("/employees/:employeeId", requireAuth, requireRole("hr_admin"), async (req, res) => {
