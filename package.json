@@ -6,13 +6,17 @@
     "apps/*",
     "packages/*"
   ],
+  "overrides": {
+    "next": { "react": "18.3.1", "react-dom": "18.3.1" },
+    "lucide-react": { "react": "18.3.1" }
+  },
   "scripts": {
-    "dev:web": "npm run dev -w apps/web",
+    "dev:web": "npm run dev -w apps/web --",
     "dev:api": "npm run dev -w apps/api",
     "dev": "npm run dev:web",
     "db:setup": "bash scripts/db-setup.sh",
-    "build": "npm run build -ws",
-    "lint": "npm run lint -ws --if-present",
-    "test": "npm run test -ws --if-present"
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
   }
 }

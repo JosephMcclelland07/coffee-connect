@@ -1,0 +1,34 @@
+.calendar { padding-bottom: 56px; letter-spacing: 0; }
+.calendar h2 { display: flex; align-items: center; gap: 10px; font-size: 25px; margin-bottom: 14px; }
+.calendar h3 { font-size: 18px; margin-bottom: 8px; }
+.calendar p { color: var(--muted); line-height: 1.5; margin-bottom: 8px; overflow-wrap: anywhere; }
+.connection { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 24px 0; border-block: 1px solid var(--line); }
+.actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.calendar button, .actions a, .primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; text-align: center; }
+.calendar button:disabled { opacity: .55; cursor: not-allowed; }
+.calendar button:hover:not(:disabled), .actions a:hover { border-color: var(--red); }
+.calendar button:focus-visible, .calendar input:focus-visible, .calendar select:focus-visible, .calendar summary:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+.calendar .primary { background: var(--red); color: white; border-color: var(--red); }
+.preferences { border-bottom: 1px solid var(--line); padding: 18px 0; }
+.preferences summary { cursor: pointer; font-weight: 600; }
+.form { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; padding-top: 20px; }
+.preferences summary { min-height: 28px; }
+.calendar label { display: grid; gap: 7px; font-size: 14px; min-width: 0; }
+.calendar input:not([type=radio]), .calendar select { min-height: 43px; width: 100%; min-width: 0; max-width: 100%; padding: 9px 10px; border: 1px solid #b9b9b4; border-radius: 4px; background: white; font: inherit; color: var(--ink); }
+.booking { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 48px; padding: 38px 0; border-bottom: 1px solid var(--line); }
+.booking > div { min-width: 0; }
+.fields { display: grid; gap: 16px; margin-bottom: 18px; }
+.wheel { text-align: center; }
+.wheel h2 { justify-content: center; }
+.calendar .wheel button { display: block; border: 0; padding: 0; background: transparent; margin: 24px auto; font-size: inherit; }
+.slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; max-height: 280px; overflow-y: auto; border: 0; padding: 14px 2px; margin: 22px 0 12px; }
+.slots legend { font-size: 14px; font-weight: 600; }
+.slots label { display: flex; align-items: center; padding: 10px; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
+.slots .selected { border-color: var(--red); background: #fff3f1; }
+.slots input { accent-color: var(--red); flex-shrink: 0; }
+.meetings { padding-top: 30px; }
+.meeting { display: flex; justify-content: space-between; align-items: center; gap: 24px; border-bottom: 1px solid var(--line); padding: 22px 0; }
+.status { display: block; color: #246449; font-size: 13px; padding-top: 4px; }
+.calendar .error { padding: 14px; background: #fff1ef; color: #9c211d; margin-block: 18px; }
+.calendar .notice { padding: 14px; background: #eef8f2; color: #246449; margin-block: 18px; }
+@media (max-width: 800px) { .booking { grid-template-columns: minmax(0, 1fr); gap: 28px; } .connection, .meeting { flex-direction: column; align-items: stretch; } .form > label { flex: 1 1 140px; } .calendar h2 { font-size: 23px; } }
