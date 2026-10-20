@@ -62,6 +62,7 @@ model Match {
 
   employeeOne Employee  @relation("MatchEmployeeOne", fields: [employeeOneId], references: [employeeId], onDelete: Cascade, onUpdate: Cascade)
   employeeTwo Employee  @relation("MatchEmployeeTwo", fields: [employeeTwoId], references: [employeeId], onDelete: Cascade, onUpdate: Cascade)
+  meetings    Meeting[]
 
   @@index([employeeOneId], map: "IX_Match_EmployeeOneID")
   @@index([employeeTwoId], map: "IX_Match_EmployeeTwoID")

@@ -40,6 +40,16 @@ type InterestCategory = {
 	interests: { interestId: number; interestName: string }[];
 };
 
+const BUILT_IN_INTEREST_CATEGORIES: InterestCategory[] = [
+	{ interestCategoryId: -1, categoryName: "Sports", interests: ["Golf", "Football", "Basketball", "Tennis", "Swimming", "Running", "Cycling", "Cricket", "Rugby", "Fitness & sports"].map((interestName, index) => ({ interestId: -index - 1, interestName })) },
+	{ interestCategoryId: -2, categoryName: "Food & drink", interests: ["Coffee & cafes", "Food & cooking", "Baking", "Trying new restaurants"].map((interestName, index) => ({ interestId: -index - 101, interestName })) },
+	{ interestCategoryId: -3, categoryName: "Arts & culture", interests: ["Books & reading", "Live music", "Art & museums", "Films & cinema", "Photography", "Theatre"].map((interestName, index) => ({ interestId: -index - 201, interestName })) },
+	{ interestCategoryId: -4, categoryName: "Outdoors & travel", interests: ["Walking & hiking", "Travel", "Gardening", "Pets & animals", "Camping"].map((interestName, index) => ({ interestId: -index - 301, interestName })) },
+	{ interestCategoryId: -5, categoryName: "Games", interests: ["Board games", "Gaming", "Chess"].map((interestName, index) => ({ interestId: -index - 401, interestName })) },
+	{ interestCategoryId: -6, categoryName: "Technology & making", interests: ["Technology & AI", "Crafts & DIY", "Coding"].map((interestName, index) => ({ interestId: -index - 501, interestName })) },
+	{ interestCategoryId: -7, categoryName: "Community", interests: ["Volunteering", "Mentoring"].map((interestName, index) => ({ interestId: -index - 601, interestName })) },
+];
+
 export default function InterestProfile({ mode = "edit" }: InterestProfileProps) {
 	const router = useRouter();
 	const [interests, setInterests] = useState<string[]>([]);
@@ -71,9 +81,15 @@ export default function InterestProfile({ mode = "edit" }: InterestProfileProps)
 					}))
 					.sort((first, second) => first.interestCategoryId - second.interestCategoryId);
 
-				if (!cancelled) setInterestCategories(sortedCategories);
+			      if (!cancelled) {
+							setInterestCategories(sortedCategories.length ? sortedCategories : BUILT_IN_INTEREST_CATEGORIES);
+							if (sortedCategories.length === 0) setStatusMessage("No database categories are available. Showing built-in interests.");
+						}
 			} catch {
-				if (!cancelled) setStatusMessage("Interest categories could not be loaded from the database.");
+							if (!cancelled) {
+								setInterestCategories(BUILT_IN_INTEREST_CATEGORIES);
+								setStatusMessage("Interest categories could not be loaded. Showing built-in interests.");
+							}
 			}
 		}
 

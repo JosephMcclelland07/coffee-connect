@@ -1,6 +1,7 @@
 "use client";
 
 import { type CSSProperties, type TransitionEvent, useMemo, useState } from "react";
+import { selectWeightedPerson, sharedInterestCount } from "@coffee-connect/matching";
 
 type WheelPerson = {
 	id: string;
@@ -18,7 +19,6 @@ type SpinWheelProps = {
 type SpinResult = {
 	name: string;
 	sharedInterests: number;
-	wasTieBreak: boolean;
 };
 
 const CONFETTI_COLORS = ["#c92f2b", "#e78b0b", "#0968b0", "#2f7d63", "#6f1daa"];
@@ -30,29 +30,6 @@ const CONFETTI_PIECES = Array.from({ length: 36 }, (_, index) => ({
 	rotation: `${((index * 113) % 720) - 360}deg`,
 	delay: `${(index % 8) * 18}ms`,
 }));
-
-function getCryptographicRandomIndex(size: number) {
-	if (size <= 1) {
-		return 0;
-	}
-
-	const maxUint32 = 2 ** 32 - 1;
-	const moduloBiasThreshold = maxUint32 - ((maxUint32 + 1) % size);
-	const randomBuffer = new Uint32Array(1);
-
-	while (true) {
-		crypto.getRandomValues(randomBuffer);
-		const randomValue = randomBuffer[0];
-
-		if (randomValue <= moduloBiasThreshold) {
-			return randomValue % size;
-		}
-	}
-}
-
-function normaliseInterest(interest: string) {
-	return interest.trim().toLowerCase();
-}
 
 export default function SpinWheel({ currentUserId, currentUserInterests, people, resolveWinner }: SpinWheelProps) {
 	const [rotation, setRotation] = useState(0);
@@ -94,28 +71,18 @@ export default function SpinWheel({ currentUserId, currentUserInterests, people,
 			return;
 		}
 
-		const currentInterests = new Set(currentUserInterests.map(normaliseInterest));
-		const scoredPeople = wheelSegments.map((person) => {
-			const sharedInterests = person.interests.reduce((count, interest) => {
-				return currentInterests.has(normaliseInterest(interest)) ? count + 1 : count;
-			}, 0);
-
-			return { person, sharedInterests };
-		});
-
-		const bestSharedInterestCount = Math.max(...scoredPeople.map((score) => score.sharedInterests));
-		const topMatches = scoredPeople.filter(
-			(score) => score.sharedInterests === bestSharedInterestCount,
-		);
+		const candidates = wheelSegments.map((person) => ({ ...person, id: String(person.id) }));
+		const winner = selectWeightedPerson(candidates, currentUserId, currentUserInterests);
+		if (!winner) return;
 		setIsSpinning(true);
 		setError("");
-		let winningCandidate = topMatches[getCryptographicRandomIndex(topMatches.length)];
+		let winningCandidate = winner;
 		if (resolveWinner) {
 			try {
 				const winnerId = await resolveWinner();
-				const serverWinner = scoredPeople.find((candidate) => candidate.person.id === winnerId);
+				const serverWinner = candidates.find((candidate) => candidate.id === winnerId);
 				if (!serverWinner) throw new Error("The colleague list changed. Refresh and spin again.");
-				winningCandidate = serverWinner;
+				winningCandidate = { person: serverWinner, sharedInterests: sharedInterestCount(currentUserInterests, serverWinner.interests), weight: 1 };
 			} catch (caught) {
 				setError(caught instanceof Error ? caught.message : "Could not save your match.");
 				setIsSpinning(false);
@@ -140,7 +107,6 @@ export default function SpinWheel({ currentUserId, currentUserInterests, people,
 		setPendingSpinResult({
 			name: winningCandidate.person.name,
 			sharedInterests: winningCandidate.sharedInterests,
-			wasTieBreak: topMatches.length > 1,
 		});
 	}
 
@@ -163,7 +129,7 @@ export default function SpinWheel({ currentUserId, currentUserInterests, people,
 				type="button"
 				className="spin-wheel-control"
 				aria-label="Spin the meetup wheel"
-				aria-describedby="wheel-caption"
+				aria-describedby={spinResult ? "wheel-caption" : undefined}
 				onClick={spinWheel}
 				disabled={isSpinning || candidatePeople.length === 0}
 			>
@@ -206,10 +172,8 @@ export default function SpinWheel({ currentUserId, currentUserInterests, people,
 				)}
 			</button>
 			{spinResult && (
-				<p className="wheel-caption">
-					Matched with <strong>{spinResult.name}</strong> ({spinResult.sharedInterests} shared
-					 interest{spinResult.sharedInterests === 1 ? "" : "s"})
-					{spinResult.wasTieBreak ? " • tie broken with secure random selection" : ""}.
+				<p className="wheel-caption" id="wheel-caption" role="status">
+					Matched with <strong>{spinResult.name}</strong> ({spinResult.sharedInterests} shared interest{spinResult.sharedInterests === 1 ? "" : "s"}).
 				</p>
 			)}
 			{error && <p role="alert">{error}</p>}

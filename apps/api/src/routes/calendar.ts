@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { createHash, randomInt } from "node:crypto";
+import { createHash } from "node:crypto";
+import { selectWeightedPerson } from "@coffee-connect/matching";
 import { type Meeting } from "@prisma/client";
 import { AppError } from "../lib/AppError";
 import { database } from "../lib/database";
@@ -56,13 +57,12 @@ calendarRouter.post("/matches", async (req, res) => {
   const employeeId = Number(req.user!.id);
   const people = await wheelPeople();
   const current = people.find((person) => person.employeeId === employeeId);
-  const interests = new Set(current?.interests.map((item) => item.interest.interestName.toLowerCase()));
-  const candidates = people.filter((person) => person.employeeId !== employeeId).map((person) => ({ person,
-    score: person.interests.filter((item) => interests.has(item.interest.interestName.toLowerCase())).length }));
-  if (!candidates.length) throw new AppError(409, "No connected colleagues are available yet.");
-  const highest = Math.max(...candidates.map((candidate) => candidate.score));
-  const best = candidates.filter((candidate) => candidate.score === highest);
-  const selected = best[randomInt(best.length)].person;
+  const candidates = people.map((person) => ({ id: String(person.employeeId), person,
+    interests: person.interests.map((item) => item.interest.interestName) }));
+  const winner = selectWeightedPerson(candidates, String(employeeId),
+    current?.interests.map((item) => item.interest.interestName) ?? []);
+  if (!winner) throw new AppError(409, "No connected colleagues are available yet.");
+  const selected = winner.person.person;
   const existing = await database().match.findFirst({ where: { OR: [
     { employeeOneId: employeeId, employeeTwoId: selected.employeeId }, { employeeOneId: selected.employeeId, employeeTwoId: employeeId },
   ] }, orderBy: { matchDate: "desc" } });

@@ -33,7 +33,10 @@ test("registration, password verification, and JWT protection", async (suite) =>
   app.use(errorHandlerMiddleware);
   const server = app.listen(0, "127.0.0.1");
   await new Promise(resolve => server.once("listening", resolve));
-  suite.after(() => new Promise(resolve => server.close(resolve)));
+  suite.after(() => new Promise(resolve => {
+    server.close(resolve);
+    server.closeAllConnections();
+  }));
   const base = `http://127.0.0.1:${server.address().port}`;
   const credentials = { name: "Test Person", email: "person@paconsulting.com", password: "a-test-password-123" };
   let token;
