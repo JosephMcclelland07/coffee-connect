@@ -10,15 +10,28 @@ function sharedCategoryCount(currentCategories, candidateCategories) {
   return [...normalise(candidateCategories)].filter((category) => current.has(category)).length;
 }
 
-function visibleWheelPeople(people, winnerId, maximumVisible = 8) {
+function topMatchPeople(people, currentUserId, currentInterests, currentCategories = [], maximumVisible = 8) {
   if (!Number.isSafeInteger(maximumVisible) || maximumVisible < 1) throw new Error("Invalid visible wheel capacity.");
-  const firstVisiblePeople = people.slice(0, maximumVisible);
-  if (people.length <= maximumVisible || !winnerId || firstVisiblePeople.some((person) => person.id === winnerId)) {
-    return firstVisiblePeople;
-  }
-
-  const winner = people.find((person) => person.id === winnerId);
-  return winner ? [...people.slice(0, maximumVisible - 1), winner] : firstVisiblePeople;
+  return people
+    .filter((person) => person.id !== currentUserId)
+    .map((person) => ({
+      person,
+      sharedInterests: sharedInterestCount(currentInterests, person.interests),
+      sharedCategories: sharedCategoryCount(currentCategories, person.categories || []),
+    }))
+    .sort((left, right) => {
+      const interestDelta = right.sharedInterests - left.sharedInterests;
+      if (interestDelta !== 0) return interestDelta;
+      const categoryDelta = right.sharedCategories - left.sharedCategories;
+      if (categoryDelta !== 0) return categoryDelta;
+      const leftName = typeof left.person.name === "string" ? left.person.name.trim().toLowerCase() : "";
+      const rightName = typeof right.person.name === "string" ? right.person.name.trim().toLowerCase() : "";
+      const nameDelta = leftName.localeCompare(rightName);
+      if (nameDelta !== 0) return nameDelta;
+      return String(left.person.id).localeCompare(String(right.person.id));
+    })
+    .slice(0, maximumVisible)
+    .map((entry) => entry.person);
 }
 
 function randomInteger(maximum) {
@@ -35,7 +48,7 @@ function selectWeightedPerson(people, currentUserId, currentInterests, draw = ra
   const candidates = people.filter((person) => person.id !== currentUserId).map((person) => {
     const sharedInterests = sharedInterestCount(currentInterests, person.interests);
     const sharedCategories = sharedCategoryCount(currentCategories, person.categories || []);
-    return { person, sharedInterests, sharedCategories, weight: 1 + sharedInterests + sharedCategories };
+    return { person, sharedInterests, sharedCategories, weight: 1 + sharedInterests };
   });
   if (!candidates.length) return undefined;
   const total = candidates.reduce((sum, candidate) => sum + candidate.weight, 0);
@@ -47,4 +60,4 @@ function selectWeightedPerson(people, currentUserId, currentInterests, draw = ra
   }
 }
 
-module.exports = { sharedInterestCount, sharedCategoryCount, visibleWheelPeople, selectWeightedPerson };
+module.exports = { sharedInterestCount, sharedCategoryCount, topMatchPeople, selectWeightedPerson };
