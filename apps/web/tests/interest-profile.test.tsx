@@ -5,6 +5,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import InterestProfile from "../components/interest-profile";
 
+// Tests for the InterestProfile component, ensuring it renders correctly and saves interests to the API.
+
 const router = { push() {}, replace() {}, refresh() {}, back() {}, forward() {}, prefetch() {} } as unknown as AppRouterInstance;
 
 test("InterestProfile renders the interests form with a save button", () => {
