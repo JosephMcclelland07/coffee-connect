@@ -10,19 +10,24 @@ type WheelPerson = {
 	categories?: string[];
 };
 
+type SpinWinner = {
+	id: string;
+	name: string;
+	sharedInterests: number;
+	sharedCategories: number;
+};
+
 type SpinWheelProps = {
 	currentUserId: string;
 	currentUserInterests: string[];
 	currentUserCategories?: string[];
 	people: WheelPerson[];
-	resolveWinner?: () => Promise<string>;
+	resolveWinnerAction?: () => Promise<string>;
+	disabled?: boolean;
+	onSpinCompleteAction?: (winner: SpinWinner) => void;
 };
 
-type SpinResult = {
-	name: string;
-	sharedInterests: number;
-	sharedCategories: number;
-};
+type SpinResult = SpinWinner;
 
 const MAX_VISIBLE_WHEEL_PEOPLE = 8;
 const WHEEL_SEGMENT_COLORS = [
@@ -47,7 +52,7 @@ const CONFETTI_PIECES = Array.from({ length: 36 }, (_, index) => ({
 	delay: `${(index % 8) * 18}ms`,
 }));
 
-export default function SpinWheel({ currentUserId, currentUserInterests, currentUserCategories = [], people, resolveWinner }: SpinWheelProps) {
+export default function SpinWheel({ currentUserId, currentUserInterests, currentUserCategories = [], people, resolveWinnerAction, disabled = false, onSpinCompleteAction }: SpinWheelProps) {
 	const [rotation, setRotation] = useState(0);
 
 	const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
@@ -116,9 +121,9 @@ export default function SpinWheel({ currentUserId, currentUserInterests, current
 		setIsSpinning(true);
 		setError("");
 		let winningCandidate = winner;
-		if (resolveWinner) {
+		if (resolveWinnerAction) {
 			try {
-				const winnerId = await resolveWinner();
+				const winnerId = await resolveWinnerAction();
 				const serverWinner = visiblePeople.find((candidate) => candidate.id === winnerId);
 				if (!serverWinner) throw new Error("The colleague list changed. Refresh and spin again.");
 				winningCandidate = {
@@ -158,6 +163,7 @@ export default function SpinWheel({ currentUserId, currentUserInterests, current
 		});
 
 		setPendingSpinResult({
+			id: winningCandidate.person.id,
 			name: winningCandidate.person.name,
 			sharedInterests: winningCandidate.sharedInterests,
 			sharedCategories: winningCandidate.sharedCategories,
@@ -172,6 +178,7 @@ export default function SpinWheel({ currentUserId, currentUserInterests, current
 		setSpinResult(pendingSpinResult);
 		if (pendingSpinResult) {
 			setConfettiBurst((currentBurst) => currentBurst + 1);
+			onSpinCompleteAction?.(pendingSpinResult);
 		}
 		setPendingSpinResult(null);
 		setIsSpinning(false);
@@ -185,7 +192,7 @@ export default function SpinWheel({ currentUserId, currentUserInterests, current
 				aria-label="Spin the meetup wheel"
 				aria-describedby={spinResult ? "wheel-caption" : undefined}
 				onClick={spinWheel}
-				disabled={isSpinning || candidatePeople.length === 0}
+				disabled={disabled || isSpinning || candidatePeople.length === 0}
 			>
 				<span className="spin-wheel-pointer" aria-hidden="true" />
 				<span

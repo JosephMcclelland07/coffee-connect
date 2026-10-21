@@ -3,6 +3,7 @@ import { microsoftConfigured } from "./lib/config";
 import { sessionMiddleware } from "./lib/session";
 import { microsoftAuthRouter } from "./routes/microsoft-auth";
 import { calendarRouter } from "./routes/calendar";
+import { schedulerRouter } from "./routes/scheduler";
 import { AppError } from "./lib/AppError";
 import { prisma } from "./lib/prisma";
 import { authContextMiddleware, requireAuth } from "./middleware/auth";
@@ -44,6 +45,7 @@ app.use(createRateLimitMiddleware({ windowMs: 60_000, max: 120 }));
 app.use("/auth", authRouter);
 app.use("/auth/microsoft", microsoftAuthRouter);
 app.use("/calendar", calendarRouter);
+app.use("/scheduler", schedulerRouter);
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "api" });

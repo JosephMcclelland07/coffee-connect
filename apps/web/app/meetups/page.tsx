@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { SiteFooter, SiteHeader } from "../site-chrome";
-import OutlookCalendar from "../../components/outlook-calendar";
+import MeetupScheduler from "../../components/meetup-scheduler";
 
 const validAuthRoles = new Set(["employee", "hr_admin"]);
 
@@ -45,15 +45,15 @@ export default async function MeetupsPage() {
 					</div>
 				</section>
 
-				<section className="meetups-dashboard-section" id="outlook-calendar">
+				<section className="meetups-dashboard-section" id="meetup-scheduler">
 					<div className="page-width">
 						<div className="meetups-dashboard-heading">
 							<div>
 								<h2>Find time for a coffee</h2>
-								<p>View your Outlook calendar, find a free slot, and book a coffee meetup with someone new.</p>
+								<p>Spin for a same-office coffee match, then schedule and manage your meetup in Coffee Connect.</p>
 							</div>
 						</div>
-						<OutlookCalendar />
+						<MeetupScheduler />
 					</div>
 				</section>
 
