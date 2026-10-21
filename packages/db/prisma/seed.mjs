@@ -25,23 +25,44 @@ const adapter = new PrismaMariaDb({
   database: decodeURIComponent(parsedUrl.pathname.slice(1)),
 });
 
-const employees = [
-  { firstName: "Ava", lastName: "Mitchell", email: "ava.mitchell@example.com", officeLocation: "London", department: "Engineering", role: "Software Engineer" },
-  { firstName: "Noah", lastName: "Patel", email: "noah.patel@example.com", officeLocation: "Manchester", department: "People", role: "HR Business Partner" },
-  { firstName: "Mia", lastName: "Thompson", email: "mia.thompson@example.com", officeLocation: "Bristol", department: "Finance", role: "Financial Analyst" },
-  { firstName: "Liam", lastName: "Roberts", email: "liam.roberts@example.com", officeLocation: "London", department: "Product", role: "Product Manager" },
-  { firstName: "Isla", lastName: "Campbell", email: "isla.campbell@example.com", officeLocation: "Edinburgh", department: "Design", role: "UX Designer" },
-  { firstName: "Oliver", lastName: "Nguyen", email: "oliver.nguyen@example.com", officeLocation: "Manchester", department: "Engineering", role: "Data Engineer" },
-  { firstName: "Amelia", lastName: "Walker", email: "amelia.walker@example.com", officeLocation: "Bristol", department: "Marketing", role: "Marketing Manager" },
-  { firstName: "Jack", lastName: "Evans", email: "jack.evans@example.com", officeLocation: "London", department: "Sales", role: "Account Executive" },
-  { firstName: "Freya", lastName: "Morgan", email: "freya.morgan@example.com", officeLocation: "Cardiff", department: "People", role: "Talent Specialist" },
-  { firstName: "Leo", lastName: "Hughes", email: "leo.hughes@example.com", officeLocation: "Edinburgh", department: "Engineering", role: "Frontend Developer" },
-  { firstName: "Grace", lastName: "Bennett", email: "grace.bennett@example.com", officeLocation: "London", department: "Operations", role: "Operations Analyst" },
-  { firstName: "Theo", lastName: "Reed", email: "theo.reed@example.com", officeLocation: "Manchester", department: "Product", role: "Product Designer" },
-  { firstName: "Lily", lastName: "Foster", email: "lily.foster@example.com", officeLocation: "Bristol", department: "Customer Success", role: "Customer Success Manager" },
-  { firstName: "Oscar", lastName: "Murphy", email: "oscar.murphy@example.com", officeLocation: "Cardiff", department: "Finance", role: "Management Accountant" },
-  { firstName: "Poppy", lastName: "Bailey", email: "poppy.bailey@example.com", officeLocation: "London", department: "Engineering", role: "Backend Developer" },
+const offices = ["Belfast", "Bristol", "Cardiff", "Edinburgh", "London", "Manchester"];
+const nameSeeds = [
+  ["Ava", "Mitchell"], ["Noah", "Patel"], ["Mia", "Thompson"], ["Liam", "Roberts"], ["Isla", "Campbell"],
+  ["Oliver", "Nguyen"], ["Amelia", "Walker"], ["Jack", "Evans"], ["Freya", "Morgan"], ["Leo", "Hughes"],
+  ["Grace", "Bennett"], ["Theo", "Reed"], ["Lily", "Foster"], ["Oscar", "Murphy"], ["Poppy", "Bailey"],
 ];
+const departmentRoles = [
+  ["Engineering", "Software Engineer"],
+  ["People", "HR Business Partner"],
+  ["Finance", "Financial Analyst"],
+  ["Product", "Product Manager"],
+  ["Design", "UX Designer"],
+  ["Engineering", "Data Engineer"],
+  ["Marketing", "Marketing Manager"],
+  ["Sales", "Account Executive"],
+  ["People", "Talent Specialist"],
+  ["Engineering", "Frontend Developer"],
+  ["Operations", "Operations Analyst"],
+  ["Product", "Product Designer"],
+  ["Customer Success", "Customer Success Manager"],
+  ["Finance", "Management Accountant"],
+  ["Engineering", "Backend Developer"],
+];
+
+const employees = offices.flatMap((officeLocation) =>
+  nameSeeds.map(([firstName, lastName], index) => {
+    const slugOffice = officeLocation.toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const [department, role] = departmentRoles[index % departmentRoles.length];
+    return {
+      firstName,
+      lastName,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${slugOffice}@example.com`,
+      officeLocation,
+      department,
+      role,
+    };
+  }),
+);
 
 const interestCategoryDefinitions = [
   { categoryName: "Sports", interests: ["Golf", "Football", "Basketball", "Tennis", "Swimming", "Running", "Cycling", "Cricket", "Rugby", "Fitness & sports"] },
@@ -61,46 +82,10 @@ const interestToCategoryName = new Map(
   ),
 );
 
-const employeeInterestAssignments = {
-  "ava.mitchell@example.com": ["Coffee & cafes", "Running", "Travel"],
-  "noah.patel@example.com": ["Coffee & cafes", "Mentoring", "Books & reading"],
-  "mia.thompson@example.com": ["Food & cooking", "Baking", "Walking & hiking"],
-  "liam.roberts@example.com": ["Coffee & cafes", "Technology & AI", "Travel"],
-  "isla.campbell@example.com": ["Art & museums", "Photography", "Coffee & cafes"],
-  "oliver.nguyen@example.com": ["Coding", "Technology & AI", "Gaming"],
-  "amelia.walker@example.com": ["Live music", "Trying new restaurants", "Travel"],
-  "jack.evans@example.com": ["Football", "Rugby", "Coffee & cafes"],
-  "freya.morgan@example.com": ["Mentoring", "Volunteering", "Books & reading"],
-  "leo.hughes@example.com": ["Coding", "Board games", "Coffee & cafes"],
-  "grace.bennett@example.com": ["Walking & hiking", "Gardening", "Pets & animals"],
-  "theo.reed@example.com": ["Technology & AI", "Films & cinema", "Chess"],
-  "lily.foster@example.com": ["Coffee & cafes", "Theatre", "Books & reading"],
-  "oscar.murphy@example.com": ["Food & cooking", "Cricket", "Travel"],
-  "poppy.bailey@example.com": ["Coding", "Coffee & cafes", "Cycling"],
-};
-
-const matches = [
-  ["ava.mitchell@example.com", "noah.patel@example.com"],
-  ["mia.thompson@example.com", "liam.roberts@example.com"],
-  ["isla.campbell@example.com", "oliver.nguyen@example.com"],
-  ["amelia.walker@example.com", "jack.evans@example.com"],
-  ["freya.morgan@example.com", "leo.hughes@example.com"],
-  ["grace.bennett@example.com", "theo.reed@example.com"],
-  ["lily.foster@example.com", "oscar.murphy@example.com"],
-  ["poppy.bailey@example.com", "ava.mitchell@example.com"],
-  ["noah.patel@example.com", "mia.thompson@example.com"],
-  ["liam.roberts@example.com", "isla.campbell@example.com"],
-  ["oliver.nguyen@example.com", "amelia.walker@example.com"],
-  ["jack.evans@example.com", "freya.morgan@example.com"],
-  ["leo.hughes@example.com", "grace.bennett@example.com"],
-  ["theo.reed@example.com", "lily.foster@example.com"],
-  ["oscar.murphy@example.com", "poppy.bailey@example.com"],
-  ["ava.mitchell@example.com", "mia.thompson@example.com"],
-  ["noah.patel@example.com", "isla.campbell@example.com"],
-  ["liam.roberts@example.com", "oliver.nguyen@example.com"],
-  ["amelia.walker@example.com", "freya.morgan@example.com"],
-  ["jack.evans@example.com", "leo.hughes@example.com"],
-];
+const matches = offices.flatMap((officeLocation) => {
+  const officeEmails = employees.filter((employee) => employee.officeLocation === officeLocation).map((employee) => employee.email);
+  return officeEmails.map((email, index) => [email, officeEmails[(index + 1) % officeEmails.length]]);
+});
 
 const prisma = new PrismaClient({ adapter });
 
@@ -181,9 +166,15 @@ const upsertInterestCategoriesAndAssignments = async (client) => {
 
 /** @param {any} client */
 const upsertEmployeeInterests = async (client) => {
-  for (const [email, assignedInterests] of Object.entries(employeeInterestAssignments)) {
-    const employee = await client.employee.findUnique({ where: { email }, select: { employeeId: true } });
+  for (const [index, employeeSeed] of employees.entries()) {
+    const employee = await client.employee.findUnique({ where: { email: employeeSeed.email }, select: { employeeId: true } });
     if (!employee) continue;
+
+    const assignedInterests = [
+      interestNames[(index * 3) % interestNames.length],
+      interestNames[(index * 3 + 7) % interestNames.length],
+      interestNames[(index * 3 + 13) % interestNames.length],
+    ];
 
     for (const interestName of assignedInterests) {
       const interest = await client.interest.findUnique({ where: { interestName }, select: { interestId: true } });
@@ -200,25 +191,21 @@ const upsertEmployeeInterests = async (client) => {
 try {
   const existingEmployeeCount = await prisma.employee.count();
   if (existingEmployeeCount > 0) {
-    const [employeeCount, matchCount] = await Promise.all([
-      prisma.employee.count({ where: { email: { in: employees.map(({ email }) => email) } } }),
-      prisma.match.count(),
-    ]);
-
-    const baseSeedIsComplete =
-      employeeCount === employees.length &&
-      matchCount >= matches.length;
-
-    if (!baseSeedIsComplete) {
-      throw new Error("Refusing to seed a non-empty database with incomplete or unrelated seed data.");
-    }
-
     await prisma.$transaction(async (transaction) => {
+      await Promise.all(
+        employees.map((employee) =>
+          transaction.employee.upsert({
+            where: { email: employee.email },
+            create: employee,
+            update: employee,
+          }),
+        ),
+      );
       await upsertInterestCategoriesAndAssignments(transaction);
       await upsertEmployeeInterests(transaction);
     });
 
-    console.log("Interest categories and employee interests synchronized for existing seed data.");
+    console.log("Employees (15 per office), interest categories, and employee interests synchronized for existing seed data.");
   } else {
     await prisma.$transaction(async (transaction) => {
       await Promise.all(
@@ -253,7 +240,7 @@ try {
       );
     });
 
-    console.log("Database seeded successfully.");
+    console.log("Database seeded successfully with 15 employees per office.");
   }
 } finally {
   await prisma.$disconnect();
