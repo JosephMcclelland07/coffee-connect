@@ -5,6 +5,15 @@ import { useRouter } from "next/navigation";
 import { PROFILE_SETUP_PENDING_KEY, PROFILE_STORAGE_KEY } from "../lib/profile-flow";
 const MAX_INTERESTS = 3;
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/+$/, "");
+
+function deriveCustomInterests(selectedInterests: string[], categories: InterestCategory[]) {
+	const suggested = new Set(
+		categories.flatMap((category) =>
+			category.interests.map(({ interestName }) => (LEGACY_INTEREST_ALIASES[interestName] ?? interestName).toLowerCase()),
+		),
+	);
+	return selectedInterests.filter((interest) => !suggested.has(interest.toLowerCase()));
+}
 const LEGACY_INTEREST_ALIASES: Record<string, string> = {
 	Hiking: "Walking & hiking",
 	Cooking: "Food & cooking",
@@ -18,7 +27,7 @@ const LEGACY_INTEREST_ALIASES: Record<string, string> = {
 };
 
 const OFFICE_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-const OFFICE_LOCATIONS = ["Bristol", "Cardiff", "Edinburgh", "London", "Manchester"];
+const OFFICE_LOCATIONS = ["Bristol", "Cardiff", "Edinburgh", "London", "Manchester", "Belfast"];
 
 type SavedInterestProfile = {
 	interests: string[];
@@ -100,40 +109,59 @@ export default function InterestProfile({ mode = "edit" }: InterestProfileProps)
 	}, []);
 
 	useEffect(() => {
-		try {
-			if (mode === "setup" && window.localStorage.getItem(PROFILE_SETUP_PENDING_KEY) !== "true") {
-				router.replace("/login");
-				return;
-			}
+		async function loadProfile() {
+			try {
+				if (mode === "setup" && window.localStorage.getItem(PROFILE_SETUP_PENDING_KEY) !== "true") {
+					router.replace("/login");
+					return;
+				}
 
-			const savedProfile = window.localStorage.getItem(PROFILE_STORAGE_KEY);
-			if (savedProfile) {
-				const parsed = JSON.parse(savedProfile) as Partial<SavedInterestProfile>;
-				if (Array.isArray(parsed.interests)) {
-					setInterests(parsed.interests.slice(0, MAX_INTERESTS));
+				const savedProfile = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+				if (savedProfile) {
+					const parsed = JSON.parse(savedProfile) as Partial<SavedInterestProfile>;
+					if (Array.isArray(parsed.interests)) {
+						setInterests(parsed.interests.slice(0, MAX_INTERESTS));
+					}
+					if (Array.isArray(parsed.customInterests)) {
+						setCustomInterests(parsed.customInterests);
+					}
+					if (typeof parsed.officeLocation === "string") {
+						setOfficeLocation(parsed.officeLocation);
+					}
+					if (Array.isArray(parsed.officeDays)) {
+						setOfficeDays(parsed.officeDays.filter((day) => typeof day === "string"));
+					}
+					if (typeof parsed.availableFrom === "string") {
+						setAvailableFrom(parsed.availableFrom);
+					}
+					if (typeof parsed.availableUntil === "string") {
+						setAvailableUntil(parsed.availableUntil);
+					}
 				}
-				if (Array.isArray(parsed.customInterests)) {
-					setCustomInterests(parsed.customInterests);
+
+				const response = await fetch("/api/profile", { cache: "no-store" });
+				if (response.ok) {
+					const payload = await response.json() as { interests?: string[]; officeLocation?: string };
+					const savedInterests = Array.isArray(payload.interests) ? payload.interests.slice(0, MAX_INTERESTS) : [];
+					setInterests(savedInterests);
+					setCustomInterests(deriveCustomInterests(savedInterests, BUILT_IN_INTEREST_CATEGORIES));
+					if (typeof payload.officeLocation === "string") setOfficeLocation(payload.officeLocation);
 				}
-				if (typeof parsed.officeLocation === "string") {
-					setOfficeLocation(parsed.officeLocation);
-				}
-				if (Array.isArray(parsed.officeDays)) {
-					setOfficeDays(parsed.officeDays.filter((day) => typeof day === "string"));
-				}
-				if (typeof parsed.availableFrom === "string") {
-					setAvailableFrom(parsed.availableFrom);
-				}
-				if (typeof parsed.availableUntil === "string") {
-					setAvailableUntil(parsed.availableUntil);
-				}
+			} catch {
+				setStatusMessage("Saved interests could not be loaded.");
+			} finally {
+				setIsLoaded(true);
 			}
-		} catch {
-			setStatusMessage("Saved interests could not be loaded.");
-		} finally {
-			setIsLoaded(true);
 		}
+		void loadProfile();
 	}, [mode, router]);
+
+	useEffect(() => {
+		const categories = interestCategories.length ? interestCategories : BUILT_IN_INTEREST_CATEGORIES;
+		const derived = deriveCustomInterests(interests, categories);
+		const same = derived.length === customInterests.length && derived.every((item, index) => item === customInterests[index]);
+		if (!same) setCustomInterests(derived);
+	}, [customInterests, interestCategories, interests]);
 
 	function toggleInterest(interest: string) {
 		if (!interests.includes(interest) && interests.length >= MAX_INTERESTS) {
@@ -183,7 +211,7 @@ export default function InterestProfile({ mode = "edit" }: InterestProfileProps)
 		setStatusMessage("");
 	}
 
-	function saveProfile(event: FormEvent<HTMLFormElement>) {
+	async function saveProfile(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		if (!officeLocation) {
 			setStatusMessage("Choose an office to finish your profile.");
@@ -215,15 +243,23 @@ export default function InterestProfile({ mode = "edit" }: InterestProfileProps)
 		};
 
 		try {
+			const response = await fetch("/api/profile", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ interests, officeLocation }),
+			});
+			const result = await response.json();
+			if (!response.ok) throw new Error(typeof result?.error === "string" ? result.error : "Could not save your profile.");
+
 			window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
 			if (mode === "setup") {
 				window.localStorage.removeItem(PROFILE_SETUP_PENDING_KEY);
 				router.push("/meetups");
 			} else {
-				setStatusMessage("Profile saved in this browser. Calendar syncing can be connected later.");
+				setStatusMessage("Profile saved.");
 			}
-		} catch {
-			setStatusMessage("Interests could not be saved in this browser.");
+		} catch (error) {
+			setStatusMessage(error instanceof Error ? error.message : "Interests could not be saved.");
 		}
 	}
 

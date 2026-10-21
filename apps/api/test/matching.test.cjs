@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { selectWeightedPerson, sharedCategoryCount, sharedInterestCount, visibleWheelPeople } = require("@coffee-connect/matching");
+const { selectWeightedPerson, sharedCategoryCount, sharedInterestCount, topMatchPeople } = require("@coffee-connect/matching");
 
 test("every candidate gets a ticket and shared interests increase selection weight", () => {
   const people = [
@@ -25,7 +25,7 @@ test("interest normalisation avoids duplicate weight", () => {
   assert.equal(sharedInterestCount([" Coffee ", "AI", ""], ["coffee", "COFFEE", " ai ", " "]), 2);
 });
 
-test("matching weight increases for shared interests and distinct shared categories", () => {
+test("matching weight increases for shared interests while equal-interest candidates stay equally weighted", () => {
   const people = [
     { id: "self", interests: ["Coffee"], categories: [1, 2] },
     { id: "other-category", interests: ["Books"], categories: [3] },
@@ -34,9 +34,9 @@ test("matching weight increases for shared interests and distinct shared categor
   ];
   const weights = new Map();
 
-  for (let ticket = 0; ticket < 6; ticket++) {
+  for (let ticket = 0; ticket < 4; ticket++) {
     const result = selectWeightedPerson(people, "self", ["Coffee"], (maximum) => {
-      assert.equal(maximum, 6);
+      assert.equal(maximum, 4);
       return ticket;
     }, [1, 2]);
     weights.set(result.person.id, (weights.get(result.person.id) || 0) + 1);
@@ -44,29 +44,29 @@ test("matching weight increases for shared interests and distinct shared categor
 
   assert.deepEqual(Object.fromEntries(weights), {
     "other-category": 1,
-    "same-category": 2,
-    "same-interest": 3,
+    "same-category": 1,
+    "same-interest": 2,
   });
   assert.equal(sharedCategoryCount([1, "2", 2], ["1", 2, 2]), 2);
 });
 
-test("wheel shows at most eight people while every candidate remains selectable", () => {
-  const people = Array.from({ length: 12 }, (_, index) => ({
-    id: `employee-${index}`,
-    interests: [],
-  }));
-  const candidates = people.slice(1);
-  const visible = visibleWheelPeople(candidates, "employee-11");
-  const selected = new Set();
+test("wheel uses the top 8 ranked by shared interests, then categories, then name", () => {
+  const people = [
+    { id: "self", name: "Self", interests: ["Coffee", "Travel"], categories: ["A"] },
+    { id: "1", name: "Zoe", interests: ["Coffee", "Travel"], categories: ["A"] },
+    { id: "2", name: "Amy", interests: ["Coffee", "Travel"], categories: ["A"] },
+    { id: "3", name: "Ben", interests: ["Coffee", "Travel"], categories: ["A"] },
+    { id: "4", name: "Cal", interests: ["Coffee"], categories: ["A"] },
+    { id: "5", name: "Dan", interests: ["Coffee"], categories: ["A"] },
+    { id: "6", name: "Eve", interests: ["Coffee"], categories: ["B"] },
+    { id: "7", name: "Fay", interests: [], categories: ["A"] },
+    { id: "8", name: "Gio", interests: [], categories: [] },
+    { id: "9", name: "Hal", interests: [], categories: [] },
+    { id: "10", name: "Ian", interests: [], categories: [] },
+  ];
+
+  const visible = topMatchPeople(people, "self", ["Coffee", "Travel"], ["A"], 8);
 
   assert.equal(visible.length, 8);
-  assert.equal(visible[7].id, "employee-11");
-  for (let ticket = 0; ticket < candidates.length; ticket++) {
-    const result = selectWeightedPerson(people, "employee-0", [], (maximum) => {
-      assert.equal(maximum, candidates.length);
-      return ticket;
-    });
-    selected.add(result.person.id);
-  }
-  assert.equal(selected.size, candidates.length);
+  assert.deepEqual(visible.map((person) => person.id), ["2", "3", "1", "4", "5", "6", "7", "8"]);
 });

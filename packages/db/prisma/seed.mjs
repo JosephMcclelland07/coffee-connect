@@ -61,6 +61,23 @@ const interestToCategoryName = new Map(
   ),
 );
 
+const employeeInterestAssignments = {
+  "ava.mitchell@example.com": ["Coffee & cafes", "Running", "Travel"],
+  "noah.patel@example.com": ["Coffee & cafes", "Mentoring", "Books & reading"],
+  "mia.thompson@example.com": ["Food & cooking", "Baking", "Walking & hiking"],
+  "liam.roberts@example.com": ["Coffee & cafes", "Technology & AI", "Travel"],
+  "isla.campbell@example.com": ["Art & museums", "Photography", "Coffee & cafes"],
+  "oliver.nguyen@example.com": ["Coding", "Technology & AI", "Gaming"],
+  "amelia.walker@example.com": ["Live music", "Trying new restaurants", "Travel"],
+  "jack.evans@example.com": ["Football", "Rugby", "Coffee & cafes"],
+  "freya.morgan@example.com": ["Mentoring", "Volunteering", "Books & reading"],
+  "leo.hughes@example.com": ["Coding", "Board games", "Coffee & cafes"],
+  "grace.bennett@example.com": ["Walking & hiking", "Gardening", "Pets & animals"],
+  "theo.reed@example.com": ["Technology & AI", "Films & cinema", "Chess"],
+  "lily.foster@example.com": ["Coffee & cafes", "Theatre", "Books & reading"],
+  "oscar.murphy@example.com": ["Food & cooking", "Cricket", "Travel"],
+  "poppy.bailey@example.com": ["Coding", "Coffee & cafes", "Cycling"],
+};
 
 const matches = [
   ["ava.mitchell@example.com", "noah.patel@example.com"],
@@ -162,6 +179,24 @@ const upsertInterestCategoriesAndAssignments = async (client) => {
   }
 };
 
+/** @param {any} client */
+const upsertEmployeeInterests = async (client) => {
+  for (const [email, assignedInterests] of Object.entries(employeeInterestAssignments)) {
+    const employee = await client.employee.findUnique({ where: { email }, select: { employeeId: true } });
+    if (!employee) continue;
+
+    for (const interestName of assignedInterests) {
+      const interest = await client.interest.findUnique({ where: { interestName }, select: { interestId: true } });
+      if (!interest) continue;
+      await client.employeeInterest.upsert({
+        where: { employeeId_interestId: { employeeId: employee.employeeId, interestId: interest.interestId } },
+        create: { employeeId: employee.employeeId, interestId: interest.interestId },
+        update: {},
+      });
+    }
+  }
+};
+
 try {
   const existingEmployeeCount = await prisma.employee.count();
   if (existingEmployeeCount > 0) {
@@ -180,9 +215,10 @@ try {
 
     await prisma.$transaction(async (transaction) => {
       await upsertInterestCategoriesAndAssignments(transaction);
+      await upsertEmployeeInterests(transaction);
     });
 
-    console.log("Interest categories synchronized for existing seed data.");
+    console.log("Interest categories and employee interests synchronized for existing seed data.");
   } else {
     await prisma.$transaction(async (transaction) => {
       await Promise.all(
@@ -196,7 +232,7 @@ try {
       );
 
       await upsertInterestCategoriesAndAssignments(transaction);
-
+      await upsertEmployeeInterests(transaction);
 
       const now = Date.now();
       await Promise.all(

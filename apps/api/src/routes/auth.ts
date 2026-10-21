@@ -36,15 +36,29 @@ function publicAccount(employee: { employeeId: number; firstName: string; lastNa
 
 const dummyHash = bcrypt.hash("unused-account-timing-padding", 12);
 
-export function createAuthRouter(store?: Pick<PrismaClient, "employee">) {
+type AuthStore = Pick<PrismaClient, "employee"> & {
+  authEvent: {
+    create(args: {
+      data: {
+        employeeId?: number;
+        email?: string;
+        eventType: "login_success" | "login_failed";
+        authMethod: "password";
+      };
+    }): Promise<unknown>;
+  };
+};
+
+export function createAuthRouter(store?: AuthStore) {
   const authRouter = Router();
   authRouter.use(createRateLimitMiddleware({ windowMs: 60_000, max: 10 }));
 
   authRouter.post("/register", async (req, res, next) => {
     try {
+      const db: AuthStore & { employee: any } = (store ?? database()) as AuthStore & { employee: any };
       const { email, password, firstName, lastName } = validateCredentials(req.body, true);
       const passwordHash = await bcrypt.hash(password, 12);
-      const employee = await (store ?? database()).employee.create({
+      const employee = await db.employee.create({
         data: { firstName, lastName, email, passwordHash },
         select: { employeeId: true, firstName: true, lastName: true, email: true },
       });
@@ -56,11 +70,58 @@ export function createAuthRouter(store?: Pick<PrismaClient, "employee">) {
 
   authRouter.post("/login", async (req, res, next) => {
     try {
+      const db: AuthStore & { employee: any } = (store ?? database()) as AuthStore & { employee: any };
       const { email, password } = validateCredentials(req.body, false);
-      const employee = await (store ?? database()).employee.findUnique({ where: { email } });
+      const employee = await db.employee.findUnique({ where: { email } });
       const matches = await bcrypt.compare(password, employee?.passwordHash ?? await dummyHash);
       if (!employee?.passwordHash || !employee.isActive || !matches) {
+        try {
+          if (employee?.employeeId) {
+            await Promise.all([
+              db.employee.update({
+                where: { employeeId: employee.employeeId },
+                data: { lastFailedLoginAt: new Date(), failedLoginCount: { increment: 1 } },
+              }),
+              db.authEvent.create({
+                data: {
+                  employeeId: employee.employeeId,
+                  email,
+                  eventType: "login_failed",
+                  authMethod: "password",
+                },
+              }),
+            ]);
+          } else {
+            await db.authEvent.create({
+              data: {
+                email,
+                eventType: "login_failed",
+                authMethod: "password",
+              },
+            });
+          }
+        } catch (trackingError) {
+          console.warn("Auth tracking write failed during login failure handling.", trackingError);
+        }
         throw new AppError(401, "Invalid email or password.");
+      }
+      try {
+        await Promise.all([
+          db.employee.update({
+            where: { employeeId: employee.employeeId },
+            data: { lastLoginAt: new Date(), failedLoginCount: 0 },
+          }),
+          db.authEvent.create({
+            data: {
+              employeeId: employee.employeeId,
+              email,
+              eventType: "login_success",
+              authMethod: "password",
+            },
+          }),
+        ]);
+      } catch (trackingError) {
+        console.warn("Auth tracking write failed during login success handling.", trackingError);
       }
       res.setHeader("Cache-Control", "no-store");
       res.json({ token: createToken(employee.employeeId), account: publicAccount(employee) });

@@ -95,6 +95,72 @@ app.get("/me", requireAuth, async (req, res, next) => {
   }
 });
 
+function normalizeInterests(input: unknown): string[] {
+  if (!Array.isArray(input)) throw new AppError(400, "Interests must be an array.");
+  const normalized = input
+    .map((value) => typeof value === "string" ? value.trim() : "")
+    .filter(Boolean);
+  const deduped = [...new Map(normalized.map((value) => [value.toLowerCase(), value])).values()];
+  if (deduped.length > 3) throw new AppError(400, "You can save up to 3 interests.");
+  if (deduped.some((value) => value.length > 100)) throw new AppError(400, "Each interest must be at most 100 characters.");
+  return deduped;
+}
+
+app.get("/profile/me", requireAuth, async (req, res) => {
+  const employeeId = Number(req.user!.id);
+  const employee = await database().employee.findUnique({
+    where: { employeeId },
+    select: {
+      officeLocation: true,
+      interests: { select: { interest: { select: { interestName: true } } }, orderBy: { employeeInterestId: "asc" } },
+    },
+  });
+  if (!employee) throw new AppError(404, "Employee not found.");
+  res.json({
+    interests: employee.interests.map((item) => item.interest.interestName),
+    officeLocation: employee.officeLocation ?? "",
+  });
+});
+
+app.put("/profile/me", requireAuth, async (req, res) => {
+  if (!req.body || typeof req.body !== "object") throw new AppError(400, "Body must be an object.");
+  const payload = req.body as Record<string, unknown>;
+  const interests = normalizeInterests(payload.interests);
+  const officeLocation = typeof payload.officeLocation === "string" ? payload.officeLocation.trim() : "";
+  if (officeLocation.length > 100) throw new AppError(400, "Office location must be at most 100 characters.");
+
+  const employeeId = Number(req.user!.id);
+  const saved = await database().$transaction(async (tx) => {
+    const interestIds: number[] = [];
+    for (const interestName of interests) {
+      const existing = await tx.interest.findUnique({ where: { interestName }, select: { interestId: true } });
+      const interest = existing ?? await tx.interest.create({ data: { interestName }, select: { interestId: true } });
+      interestIds.push(interest.interestId);
+    }
+
+    await tx.employeeInterest.deleteMany({ where: { employeeId, ...(interestIds.length ? { interestId: { notIn: interestIds } } : {}) } });
+    for (const interestId of interestIds) {
+      await tx.employeeInterest.upsert({
+        where: { employeeId_interestId: { employeeId, interestId } },
+        create: { employeeId, interestId },
+        update: {},
+      });
+    }
+
+    return tx.employee.update({
+      where: { employeeId },
+      data: { officeLocation: officeLocation || null },
+      select: { officeLocation: true, interests: { select: { interest: { select: { interestName: true } } }, orderBy: { employeeInterestId: "asc" } } },
+    });
+  });
+
+  res.json({
+    interests: saved.interests.map((item) => item.interest.interestName),
+    officeLocation: saved.officeLocation ?? "",
+    message: "Profile saved.",
+  });
+});
+
 const validateCreateEmployee = validateBody((input) => {
   if (typeof input !== "object" || input === null) {
     throw new Error("Body must be an object.");

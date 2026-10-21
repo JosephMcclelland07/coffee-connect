@@ -13,15 +13,38 @@ const { errorHandlerMiddleware } = require("../dist/middleware/errorHandler");
 
 test("registration, password verification, and JWT protection", async (suite) => {
   const accounts = new Map();
+  const authEvents = [];
   const store = { employee: {
     async create({ data }) {
       if (accounts.has(data.email)) throw Object.assign(new Error("Duplicate"), { code: "P2002" });
-      const account = { employeeId: accounts.size + 1, isActive: true, ...data };
+      const account = { employeeId: accounts.size + 1, isActive: true, failedLoginCount: 0, lastLoginAt: null, lastFailedLoginAt: null, ...data };
       accounts.set(data.email, account);
       return { employeeId: account.employeeId, firstName: account.firstName, lastName: account.lastName, email: account.email };
     },
     async findUnique({ where }) {
       return where.email ? accounts.get(where.email) ?? null : [...accounts.values()].find(account => account.employeeId === where.employeeId) ?? null;
+    },
+    async update({ where, data }) {
+      const account = [...accounts.values()].find((entry) => entry.employeeId === where.employeeId);
+      if (!account) throw new Error("Account not found");
+      if (data.failedLoginCount && typeof data.failedLoginCount.increment === "number") {
+        account.failedLoginCount += data.failedLoginCount.increment;
+      }
+      if (Object.prototype.hasOwnProperty.call(data, "lastFailedLoginAt")) {
+        account.lastFailedLoginAt = data.lastFailedLoginAt;
+      }
+      if (Object.prototype.hasOwnProperty.call(data, "lastLoginAt")) {
+        account.lastLoginAt = data.lastLoginAt;
+      }
+      if (Object.prototype.hasOwnProperty.call(data, "failedLoginCount") && typeof data.failedLoginCount === "number") {
+        account.failedLoginCount = data.failedLoginCount;
+      }
+      return account;
+    },
+  }, authEvent: {
+    async create({ data }) {
+      authEvents.push(data);
+      return { authEventId: authEvents.length, ...data };
     },
   } };
   const app = express();

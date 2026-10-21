@@ -232,7 +232,7 @@ export default function SpinWheel({ currentUserId, currentUserInterests, current
 				</p>
 			)}
 			{candidatePeople.length > MAX_VISIBLE_WHEEL_PEOPLE && (
-				<p className="wheel-caption">{candidatePeople.length} colleagues in the draw; showing {visiblePeople.length} on the wheel.</p>
+				<p className="wheel-caption">Showing your top {visiblePeople.length} closest colleagues.</p>
 			)}
 			{candidatePeople.length === 0 && <p className="wheel-caption">No other active colleagues are available yet.</p>}
 			{showWheelDebugPercentages && debugPercentages.length > 0 && (
