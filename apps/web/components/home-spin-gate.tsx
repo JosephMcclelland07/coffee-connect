@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import SpinWheel from "./spin-wheel";
 
@@ -18,6 +19,11 @@ export default function HomeSpinGate({ currentUserId, currentUserInterests, curr
   const router = useRouter();
   const [winner, setWinner] = useState<Winner | null>(null);
   const [navigating, setNavigating] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <>
@@ -29,19 +35,23 @@ export default function HomeSpinGate({ currentUserId, currentUserInterests, curr
         disabled={Boolean(winner) || navigating}
         onSpinCompleteAction={(result) => setWinner(result)}
       />
-      {winner && (
-        <div className="home-spin-empty" role="dialog" aria-modal="true" aria-labelledby="spin-match-title">
-          <p className="eyebrow">Coffee match found</p>
-          <h3 id="spin-match-title">{winner.name}</h3>
-          <p>{winner.sharedInterests} shared interest{winner.sharedInterests === 1 ? "" : "s"}, {winner.sharedCategories} shared categor{winner.sharedCategories === 1 ? "y" : "ies"}.</p>
-          <div className="hero-actions">
-            <button className="button-primary" type="button" disabled={navigating} onClick={() => {
-              setNavigating(true);
-              router.push(`/meetups?candidateId=${encodeURIComponent(winner.id)}&candidateName=${encodeURIComponent(winner.name)}`);
-            }}>{navigating ? "Opening meetups..." : "Accept and schedule"}</button>
-            <button className="text-link" type="button" disabled={navigating} onClick={() => setWinner(null)}>Decline</button>
-          </div>
-        </div>
+      {mounted && winner && createPortal(
+        <div className="home-spin-overlay" role="presentation">
+          <section className="home-spin-modal" role="dialog" aria-modal="true" aria-labelledby="spin-match-title">
+            <p className="eyebrow">Coffee match found</p>
+            <h3 id="spin-match-title">{winner.name}</h3>
+            <p>{winner.sharedInterests} shared interest{winner.sharedInterests === 1 ? "" : "s"}, {winner.sharedCategories} shared categor{winner.sharedCategories === 1 ? "y" : "ies"}.</p>
+            <p>Accept this match and schedule your meetup?</p>
+            <div className="hero-actions">
+              <button className="button-primary" type="button" disabled={navigating} onClick={() => {
+                setNavigating(true);
+                router.push(`/meetups?candidateId=${encodeURIComponent(winner.id)}&candidateName=${encodeURIComponent(winner.name)}`);
+              }}>{navigating ? "Opening meetups..." : "Accept and schedule"}</button>
+              <button className="home-spin-decline" type="button" disabled={navigating} onClick={() => setWinner(null)}>Decline</button>
+            </div>
+          </section>
+        </div>,
+        document.body,
       )}
     </>
   );

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { selectWeightedPerson, topMatchPeople } from "@coffee-connect/matching";
 import { type Meeting } from "@prisma/client";
 import { AppError } from "../lib/AppError";
+import { requiredEnv } from "../lib/config";
 import { database } from "../lib/database";
 import { requireAuth } from "../middleware/auth";
 
@@ -34,6 +35,81 @@ function meetingView(meeting: Meeting) {
     status: meeting.status,
     organiserId: meeting.organiserId,
   };
+}
+
+function formatIcsUtc(value: Date) {
+  return value.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+function escapeIcs(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+}
+
+async function sendBrevoInvite(args: {
+  meetingId: number;
+  startsAt: Date;
+  endsAt: Date;
+  location: string;
+  organiserName: string;
+  organiserEmail: string;
+  attendeeName: string;
+  attendeeEmail: string;
+}) {
+  const apiKey = requiredEnv("BREVO_API_KEY");
+  const senderEmail = requiredEnv("BREVO_SENDER_EMAIL");
+  const senderName = process.env.BREVO_SENDER_NAME || "Coffee Connect";
+
+  const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  const icsContent = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Coffee Connect//Meetup Scheduler//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:REQUEST",
+    "BEGIN:VEVENT",
+    `UID:coffee-connect-meetup-${args.meetingId}@coffee-connect`,
+    `DTSTAMP:${now}`,
+    `DTSTART:${formatIcsUtc(args.startsAt)}`,
+    `DTEND:${formatIcsUtc(args.endsAt)}`,
+    `SUMMARY:${escapeIcs(`Coffee meetup: ${args.organiserName} & ${args.attendeeName}`)}`,
+    `DESCRIPTION:${escapeIcs("Coffee Connect meetup")}`,
+    `LOCATION:${escapeIcs(args.location || "Office cafe")}`,
+    `ORGANIZER;CN=${escapeIcs(args.organiserName)}:mailto:${args.organiserEmail}`,
+    `ATTENDEE;CN=${escapeIcs(args.attendeeName)};ROLE=REQ-PARTICIPANT:mailto:${args.attendeeEmail}`,
+    "STATUS:CONFIRMED",
+    "END:VEVENT",
+    "END:VCALENDAR",
+    "",
+  ].join("\r\n");
+
+  const when = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(args.startsAt);
+  const recipients = [
+    { email: args.attendeeEmail, name: args.attendeeName },
+    { email: args.organiserEmail, name: args.organiserName },
+  ].filter((recipient, index, all) => all.findIndex((candidate) => candidate.email.toLowerCase() === recipient.email.toLowerCase()) === index);
+
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "api-key": apiKey,
+    },
+    body: JSON.stringify({
+      sender: { email: senderEmail, name: senderName },
+      to: recipients,
+      replyTo: { email: args.organiserEmail, name: args.organiserName },
+      subject: `Coffee Connect meetup invite - ${when}`,
+      textContent: `Hi ${args.attendeeName},\n\nWould you like to meet for coffee?\n\nTime: ${when}\nLocation: ${args.location || "Office cafe"}\n\nBest,\n${args.organiserName}`,
+      attachment: [{ name: `coffee-connect-meetup-${args.meetingId}.ics`, content: Buffer.from(icsContent, "utf8").toString("base64") }],
+    }),
+  });
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    console.warn("Brevo invite send failed", { status: response.status, details });
+    throw new AppError(502, "Invite email service could not send the message.");
+  }
 }
 
 async function wheelPeople(employeeId: number) {
@@ -83,8 +159,8 @@ schedulerRouter.get("/matches", async (req, res) => {
     orderBy: { matchDate: "desc" },
     take: 100,
     include: {
-      employeeOne: { select: { employeeId: true, firstName: true, lastName: true, officeLocation: true } },
-      employeeTwo: { select: { employeeId: true, firstName: true, lastName: true, officeLocation: true } },
+      employeeOne: { select: { employeeId: true, firstName: true, lastName: true, email: true, officeLocation: true } },
+      employeeTwo: { select: { employeeId: true, firstName: true, lastName: true, email: true, officeLocation: true } },
     },
   });
   res.json(matches.map((match) => {
@@ -95,6 +171,7 @@ schedulerRouter.get("/matches", async (req, res) => {
         id: colleague.employeeId,
         firstName: colleague.firstName,
         lastName: colleague.lastName,
+        email: colleague.email,
         officeLocation: colleague.officeLocation,
       },
       matchDate: match.matchDate,
@@ -249,6 +326,41 @@ schedulerRouter.patch("/meetups/:meetingId", async (req, res) => {
     },
   });
   res.json(meetingView(updated));
+});
+
+schedulerRouter.post("/meetups/:meetingId/send-invite", async (req, res) => {
+  const employeeId = Number(req.user!.id);
+  const meetingId = id(req.params.meetingId);
+  const meeting = await database().meeting.findUnique({
+    where: { meetingId },
+    include: {
+      match: {
+        include: {
+          employeeOne: { select: { employeeId: true, firstName: true, lastName: true, email: true } },
+          employeeTwo: { select: { employeeId: true, firstName: true, lastName: true, email: true } },
+        },
+      },
+    },
+  });
+  if (!meeting || meeting.organiserId !== employeeId) throw new AppError(404, "Meetup not found, or you are not the organiser.");
+  if (!meeting.startsAt || !meeting.endsAt) throw new AppError(409, "Meetup time is missing. Reschedule before sending an invite.");
+
+  const organiser = meeting.match.employeeOne.employeeId === employeeId ? meeting.match.employeeOne : meeting.match.employeeTwo;
+  const attendee = meeting.match.employeeOne.employeeId === employeeId ? meeting.match.employeeTwo : meeting.match.employeeOne;
+  if (!attendee.email) throw new AppError(409, "Matched colleague does not have an email address.");
+
+  await sendBrevoInvite({
+    meetingId: meeting.meetingId,
+    startsAt: meeting.startsAt,
+    endsAt: meeting.endsAt,
+    location: meeting.location || "Office cafe",
+    organiserName: `${organiser.firstName} ${organiser.lastName}`.trim() || "Coffee Connect",
+    organiserEmail: organiser.email,
+    attendeeName: `${attendee.firstName} ${attendee.lastName}`.trim() || attendee.email,
+    attendeeEmail: attendee.email,
+  });
+
+  res.status(202).json({ message: "Invite sent." });
 });
 
 schedulerRouter.post("/meetups/:meetingId/cancel", async (req, res) => {

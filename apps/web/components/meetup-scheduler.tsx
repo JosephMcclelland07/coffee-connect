@@ -3,15 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarDays, Check, RefreshCw, X } from "lucide-react";
-import SpinWheel from "./spin-wheel";
 import styles from "./outlook-calendar.module.css";
 
 type Account = { id: number; name: string; email: string };
-type Match = { matchId: number; colleague: { id: number; firstName: string; lastName: string; officeLocation?: string | null } };
+type Match = { matchId: number; colleague: { id: number; firstName: string; lastName: string; email: string; officeLocation?: string | null } };
 type SelectedColleague = { id: number; name: string; officeLocation?: string | null; matchId: number };
-type Person = { id: string; name: string; officeLocation?: string | null; interests: string[]; categories: string[] };
 type Meetup = { meetingId: number; matchId: number; startsAt: string; endsAt: string; location: string; status: string; organiserId: number };
-
 const api = "/api/scheduler";
 
 async function request<T>(path: string, method = "GET", body?: unknown): Promise<T> {
@@ -34,12 +31,64 @@ function toLocalInputValue(iso: string) {
   return offsetDate.toISOString().slice(0, 16);
 }
 
+function formatIcsUtc(value: string) {
+  return new Date(value).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+function escapeIcs(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+}
+
+function downloadInviteIcs(args: {
+  meetupId: number;
+  startsAt: string;
+  endsAt: string;
+  location: string;
+  organiserName: string;
+  organiserEmail: string;
+  attendeeName: string;
+  attendeeEmail: string;
+}) {
+  const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  const content = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Coffee Connect//Meetup Scheduler//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:REQUEST",
+    "BEGIN:VEVENT",
+    `UID:coffee-connect-meetup-${args.meetupId}@coffee-connect`,
+    `DTSTAMP:${now}`,
+    `DTSTART:${formatIcsUtc(args.startsAt)}`,
+    `DTEND:${formatIcsUtc(args.endsAt)}`,
+    `SUMMARY:${escapeIcs(`Coffee meetup: ${args.organiserName} & ${args.attendeeName}`)}`,
+    `DESCRIPTION:${escapeIcs("Coffee Connect meetup")}`,
+    `LOCATION:${escapeIcs(args.location || "Office cafe")}`,
+    `ORGANIZER;CN=${escapeIcs(args.organiserName)}:mailto:${args.organiserEmail}`,
+    `ATTENDEE;CN=${escapeIcs(args.attendeeName)};ROLE=REQ-PARTICIPANT:mailto:${args.attendeeEmail}`,
+    "STATUS:CONFIRMED",
+    "END:VEVENT",
+    "END:VCALENDAR",
+    "",
+  ].join("\r\n");
+
+  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `coffee-connect-meetup-${args.meetupId}.ics`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export default function MeetupScheduler() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const [account, setAccount] = useState<Account | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
   const [meetups, setMeetups] = useState<Meetup[]>([]);
   const [matchId, setMatchId] = useState("");
   const [startsAt, setStartsAt] = useState("");
@@ -51,22 +100,21 @@ export default function MeetupScheduler() {
   const [selectedColleague, setSelectedColleague] = useState<SelectedColleague | null>(null);
 
   async function load() {
-    const [auth, savedMatches, savedMeetups, colleagues] = await Promise.all([
+    const [auth, savedMatches, savedMeetups] = await Promise.all([
       fetch("/api/auth", { cache: "no-store" }),
       request<Match[]>("matches"),
       request<Meetup[]>("meetups"),
-      request<Person[]>("people"),
     ]);
     if (!auth.ok) throw new Error("Please log in to manage meetups.");
     const authPayload = await auth.json() as { account: Account };
     setAccount(authPayload.account);
     setMatches(savedMatches);
     setMeetups(savedMeetups);
-    setPeople(colleagues);
   }
 
   const candidateIdFromQuery = useMemo(() => searchParams.get("candidateId"), [searchParams]);
   const candidateNameFromQuery = useMemo(() => searchParams.get("candidateName"), [searchParams]);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -93,7 +141,9 @@ export default function MeetupScheduler() {
       }
     }
     bootstrap().catch((caught: Error) => setError(caught.message));
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [candidateIdFromQuery, candidateNameFromQuery, router]);
 
   async function action(operation: () => Promise<void>) {
@@ -128,36 +178,101 @@ export default function MeetupScheduler() {
       {notice && <p className={styles.notice} role="status">{notice}</p>}
 
       <section className={styles.booking} aria-labelledby="coffee-booking-title">
-        <div className={styles.wheel}>
-          <h2>Your next conversation</h2>
-          {selectedColleague ? (
-            <article className={styles.previewCard}>
-              <h3>{selectedColleague.name}</h3>
-              <p>{selectedColleague.officeLocation ? `Office: ${selectedColleague.officeLocation}` : "Office not set"}</p>
-              <p>Your accepted match is ready. Choose a time to schedule your meetup.</p>
-              <button type="button" onClick={() => setSelectedColleague(null)} disabled={busy}>Choose a different match</button>
-            </article>
-          ) : account && people.length > 1 ? (
-            <SpinWheel
-              currentUserId={String(account.id)}
-              people={people}
-              currentUserInterests={people.find((person) => person.id === String(account.id))?.interests || []}
-              currentUserCategories={people.find((person) => person.id === String(account.id))?.categories || []}
-              resolveWinnerAction={async () => {
-                const match = await request<{ matchId: number; colleagueId: string }>("matches", "POST");
-                await load();
-                setMatchId(String(match.matchId));
-                setEditing(null);
-                return match.colleagueId;
-              }}
-            />
-          ) : (
-            <p>No same-office colleagues are available yet.</p>
-          )}
+        <div className={styles.meetingsPanel}>
+          <h2>Your coffee meetups</h2>
+          {!meetups.length && <p>No meetups booked yet.</p>}
+          {meetups.map((meetup) => {
+            const match = matches.find((candidate) => candidate.matchId === meetup.matchId);
+            const organiser = meetup.organiserId === account?.id;
+            return (
+              <article key={meetup.meetingId} className={styles.meeting}>
+                <div>
+                  <h3>{match ? `${match.colleague.firstName} ${match.colleague.lastName}` : "Coffee Connect"}</h3>
+                  <p>{displayTime(meetup.startsAt)}</p>
+                  <p>{meetup.location}</p>
+                  <span className={styles.status}>{meetup.status === "cancelled" ? "Cancelled" : "Scheduled"}</span>
+                </div>
+                <div className={styles.actions}>
+                  {organiser && meetup.status !== "cancelled" && (
+                    <>
+                      <button
+                        type="button"
+                        disabled={busy || !match?.colleague.email}
+                        onClick={() => {
+                          if (!match?.colleague.email) return;
+                          void action(async () => {
+                            await request(`meetups/${meetup.meetingId}/send-invite`, "POST");
+                            setNotice("Invite sent with calendar attachment.");
+                          });
+                        }}
+                      >
+                        <Check size={17} /> Send invite
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          setEditing(meetup.meetingId);
+                          setMatchId(String(meetup.matchId));
+                          setStartsAt(toLocalInputValue(meetup.startsAt));
+                          setLocation(meetup.location);
+                          document.getElementById("coffee-booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }}
+                      >
+                        <CalendarDays size={17} /> Reschedule
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy || !account || !match?.colleague.email}
+                        onClick={() => {
+                          if (!account || !match?.colleague.email) return;
+                          downloadInviteIcs({
+                            meetupId: meetup.meetingId,
+                            startsAt: meetup.startsAt,
+                            endsAt: meetup.endsAt,
+                            location: meetup.location || "Office cafe",
+                            organiserName: account.name,
+                            organiserEmail: account.email,
+                            attendeeName: `${match.colleague.firstName} ${match.colleague.lastName}`.trim(),
+                            attendeeEmail: match.colleague.email,
+                          });
+                          setNotice("Calendar invite (.ics) downloaded. Attach it to your email invite.");
+                        }}
+                      >
+                        <CalendarDays size={17} /> Download .ics
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          if (window.confirm("Cancel this coffee meetup?")) {
+                            void action(async () => {
+                              await request(`meetups/${meetup.meetingId}/cancel`, "POST");
+                              await load();
+                              setNotice("Meetup cancelled.");
+                            });
+                          }
+                        }}
+                      >
+                        <X size={17} /> Cancel
+                      </button>
+                    </>
+                  )}
+                </div>
+              </article>
+            );
+          })}
         </div>
 
         <div id="coffee-booking-form">
           <h2 id="coffee-booking-title">{editing ? "Reschedule meetup" : "Arrange a meetup"}</h2>
+          {selectedColleague && (
+            <article className={styles.previewCard}>
+              <h3>{selectedColleague.name}</h3>
+              <p>{selectedColleague.officeLocation ? `Office: ${selectedColleague.officeLocation}` : "Office not set"}</p>
+              <p>Your accepted match is ready. Choose a time to schedule your meetup.</p>
+            </article>
+          )}
           {matches.length ? (
             <form onSubmit={(event) => {
               event.preventDefault();
@@ -214,46 +329,8 @@ export default function MeetupScheduler() {
         </div>
       </section>
 
-      <section className={styles.meetings} aria-labelledby="saved-meetups-title">
-        <h2 id="saved-meetups-title">Your coffee meetups</h2>
-        {!meetups.length && <p>No meetups booked yet.</p>}
-        {meetups.map((meetup) => {
-          const match = matches.find((candidate) => candidate.matchId === meetup.matchId);
-          const organiser = meetup.organiserId === account?.id;
-          return (
-            <article key={meetup.meetingId} className={styles.meeting}>
-              <div>
-                <h3>{match ? `${match.colleague.firstName} ${match.colleague.lastName}` : "Coffee Connect"}</h3>
-                <p>{displayTime(meetup.startsAt)}</p>
-                <p>{meetup.location}</p>
-                <span className={styles.status}>{meetup.status === "cancelled" ? "Cancelled" : "Scheduled"}</span>
-              </div>
-              <div className={styles.actions}>
-                {organiser && meetup.status !== "cancelled" && (
-                  <>
-                    <button type="button" disabled={busy} onClick={() => {
-                      setEditing(meetup.meetingId);
-                      setMatchId(String(meetup.matchId));
-                      setStartsAt(toLocalInputValue(meetup.startsAt));
-                      setLocation(meetup.location);
-                      document.getElementById("coffee-booking-form")?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    }}><CalendarDays size={17} /> Reschedule</button>
-                    <button type="button" disabled={busy} onClick={() => {
-                      if (window.confirm("Cancel this coffee meetup?")) {
-                        void action(async () => {
-                          await request(`meetups/${meetup.meetingId}/cancel`, "POST");
-                          await load();
-                          setNotice("Meetup cancelled.");
-                        });
-                      }
-                    }}><X size={17} /> Cancel</button>
-                  </>
-                )}
-              </div>
-            </article>
-          );
-        })}
-      </section>
+
+
     </div>
   );
 }
