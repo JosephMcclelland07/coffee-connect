@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
+import BrandLogo from "../../components/brand-logo";
 import styles from "./login.module.css";
 
 type Account = { id: number; name: string; email: string };
@@ -86,15 +87,7 @@ export default function LoginPage() {
 	return (
 		<main className={styles.page}>
 			<header className={styles.header}>
-				<p className={styles.brandName}>Coffee Connect</p>
-				<div className={styles.logo} role="img" aria-label="PA logo with upside-down lettering">
-					<span className={styles.disc} aria-hidden="true">
-						<span className={styles.letters}>PA</span>
-					</span>
-					<span className={styles.bubbleLarge} aria-hidden="true" />
-					<span className={styles.bubbleMedium} aria-hidden="true" />
-					<span className={styles.bubbleSmall} aria-hidden="true" />
-				</div>
+				<BrandLogo size="account" />
 			</header>
 			<section className={styles.loginPanel} aria-labelledby="login-title">
 				<div className={styles.formWrap}>

@@ -1,4 +1,5 @@
 import InterestProfile from "../../../components/interest-profile";
+import BrandLogo from "../../../components/brand-logo";
 
 export const metadata = {
 	title: "Create your profile | Coffee Connect",
@@ -9,7 +10,7 @@ export default function ProfileSetupPage() {
 	return (
 		<>
 			<header className="profile-setup-header page-width">
-				<span className="wordmark">Coffee Connect</span>
+				<BrandLogo />
 				<span>Profile setup</span>
 			</header>
 			<main className="personal-page page-width" id="personal">

@@ -64,6 +64,44 @@ a:focus-visible {
 	font-weight: 700;
 }
 
+.brand-logo-link {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+}
+
+.brand-lockup {
+	display: inline-flex;
+	min-width: 0;
+	align-items: center;
+	gap: 10px;
+}
+
+.brand-lockup-name {
+	color: var(--ink);
+	font-family: var(--font-sans);
+	font-size: 16px;
+	font-weight: 800;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.bright-media-logo {
+	display: block;
+	flex: 0 0 auto;
+	object-fit: contain;
+}
+
+.bright-media-logo--navigation {
+	width: 72px;
+	height: 72px;
+}
+
+.bright-media-logo--account {
+	width: 124px;
+	height: 124px;
+}
+
 .site-nav {
 	display: flex;
 	align-items: center;
@@ -666,6 +704,11 @@ h2,
 	font-size: 13px;
 }
 
+.profile-setup-header .bright-media-logo--navigation {
+	width: 64px;
+	height: 64px;
+}
+
 .personal-page-heading {
 	max-width: 720px;
 	margin-bottom: 42px;
@@ -1170,6 +1213,10 @@ h2,
 		gap: 4px;
 	}
 
+	.brand-lockup-name {
+		font-size: 14px;
+	}
+
 	.nav-link,
 	.signup-link {
 		min-height: 40px;
@@ -1295,10 +1342,6 @@ h2,
 @media (max-width: 420px) {
 	.page-width {
 		width: calc(100% - 32px);
-	}
-
-	.wordmark {
-		font-size: 20px;
 	}
 
 	.site-nav {

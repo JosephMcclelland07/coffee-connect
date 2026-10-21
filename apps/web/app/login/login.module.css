@@ -14,72 +14,7 @@
 	right: clamp(1.5rem, 5vw, 4rem);
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-}
-
-.brandName {
-	margin: 0;
-	color: var(--ink);
-	font-size: 1.25rem;
-	font-weight: 600;
-}
-
-.logo {
-	position: relative;
-	width: 5rem;
-	height: 4.55rem;
-	flex: 0 0 auto;
-}
-
-.disc {
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	width: 80%;
-	aspect-ratio: 1;
-	display: grid;
-	place-items: center;
-	border-radius: 50%;
-	background: var(--red);
-	color: var(--paper);
-	font-size: 2rem;
-	font-weight: 600;
-	line-height: 1;
-}
-
-.letters {
-	transform: rotate(180deg);
-}
-
-.bubbleLarge,
-.bubbleMedium,
-.bubbleSmall {
-	position: absolute;
-	border-radius: 50%;
-	background: var(--green);
-}
-
-.bubbleLarge {
-	top: 0;
-	left: 60%;
-	width: 20%;
-	aspect-ratio: 1;
-	border: 2px solid var(--soft);
-	box-sizing: content-box;
-}
-
-.bubbleMedium {
-	top: 23%;
-	left: 78%;
-	width: 12%;
-	aspect-ratio: 1;
-}
-
-.bubbleSmall {
-	top: 7%;
-	left: 86%;
-	width: 6%;
-	aspect-ratio: 1;
+	justify-content: flex-start;
 }
 
 .loginPanel {
@@ -279,19 +214,6 @@
 		top: 1rem;
 		left: 1rem;
 		right: 1rem;
-	}
-
-	.brandName {
-		font-size: 1.05rem;
-	}
-
-	.logo {
-		width: 4.4rem;
-		height: 4rem;
-	}
-
-	.disc {
-		font-size: 1.75rem;
 	}
 
 	.loginPanel {

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 768" role="img" aria-labelledby="title">
+  <title id="title">Bright Media</title>
+  <g fill="none" stroke-linecap="round">
+    <path d="M383 158v63" stroke="#c96c49" stroke-width="36"/>
+    <path d="m468 195-44 48" stroke="#d89470" stroke-width="36"/>
+    <path d="m499 286-55 12" stroke="#efcfb6" stroke-width="36"/>
+  </g>
+  <path fill="#39271f" fill-rule="evenodd" d="M289 185h47v96c16-17 37-26 63-26 58 0 101 43 101 101 0 61-43 104-103 104-26 0-46-9-62-27v22h-46V185zm101 118c-31 0-54 22-54 53s23 53 54 53 54-22 54-53-23-53-54-53z"/>
+  <path fill="#c96c49" d="m360 300 43 28a9 9 0 0 1 0 15l-43 28a9 9 0 0 1-14-8v-55a9 9 0 0 1 14-8z"/>
+  <text x="157" y="590" fill="#39271f" font-family="Arial, Helvetica, sans-serif" font-size="142" font-weight="800" letter-spacing="-5">bright</text>
+  <text x="242" y="668" fill="#c96c49" font-family="Arial, Helvetica, sans-serif" font-size="49" font-weight="700" letter-spacing="24">MEDIA</text>
+</svg>
