@@ -1,7 +1,7 @@
 "use client";
 
 import { type CSSProperties, type TransitionEvent, useMemo, useState } from "react";
-import { selectWeightedPerson, sharedCategoryCount, sharedInterestCount, visibleWheelPeople } from "@coffee-connect/matching";
+import { selectWeightedPerson, sharedCategoryCount, sharedInterestCount, topMatchPeople } from "@coffee-connect/matching";
 
 type WheelPerson = {
 	id: string;
@@ -37,6 +37,7 @@ const WHEEL_SEGMENT_COLORS = [
 ];
 
 const CONFETTI_COLORS = ["#c92f2b", "#e78b0b", "#0968b0", "#2f7d63", "#6f1daa"];
+const showWheelDebugPercentages = process.env.NEXT_PUBLIC_SHOW_WHEEL_DEBUG_PERCENTAGES === "1";
 const CONFETTI_PIECES = Array.from({ length: 36 }, (_, index) => ({
 	id: index,
 	color: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
@@ -48,7 +49,7 @@ const CONFETTI_PIECES = Array.from({ length: 36 }, (_, index) => ({
 
 export default function SpinWheel({ currentUserId, currentUserInterests, currentUserCategories = [], people, resolveWinner }: SpinWheelProps) {
 	const [rotation, setRotation] = useState(0);
-	const [visibleWinnerId, setVisibleWinnerId] = useState<string | null>(null);
+
 	const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
 	const [pendingSpinResult, setPendingSpinResult] = useState<SpinResult | null>(null);
 	const [isSpinning, setIsSpinning] = useState(false);
@@ -60,8 +61,8 @@ export default function SpinWheel({ currentUserId, currentUserInterests, current
 		[currentUserId, people],
 	);
 	const visiblePeople = useMemo(
-		() => visibleWheelPeople(candidatePeople, visibleWinnerId, MAX_VISIBLE_WHEEL_PEOPLE),
-		[candidatePeople, visibleWinnerId],
+		() => topMatchPeople(people, currentUserId, currentUserInterests, currentUserCategories, MAX_VISIBLE_WHEEL_PEOPLE),
+		[currentUserCategories, currentUserId, currentUserInterests, people],
 	);
 
 	const wheelSegments = useMemo(() => {
@@ -91,13 +92,26 @@ export default function SpinWheel({ currentUserId, currentUserInterests, current
 			return `${segmentColor.background} ${index * segmentSize}deg ${(index + 1) * segmentSize}deg`;
 		}).join(", ")})`
 		: "#ead9ca";
+	const debugPercentages = useMemo(() => {
+		const weighted = visiblePeople.map((person) => {
+			const sharedInterests = sharedInterestCount(currentUserInterests, person.interests);
+			const weight = 1 + sharedInterests;
+			return { id: person.id, name: person.name, sharedInterests, weight };
+		});
+		const totalWeight = weighted.reduce((sum, person) => sum + person.weight, 0);
+		if (totalWeight < 1) return [];
+		return weighted.map((person) => ({
+			...person,
+			percentage: (person.weight / totalWeight) * 100,
+		}));
+	}, [currentUserInterests, visiblePeople]);
 
 	async function spinWheel() {
 		if (wheelSegments.length === 0 || isSpinning) {
 			return;
 		}
 
-		const winner = selectWeightedPerson(people, currentUserId, currentUserInterests, undefined, currentUserCategories);
+		const winner = selectWeightedPerson(visiblePeople, currentUserId, currentUserInterests, undefined, currentUserCategories);
 		if (!winner) return;
 		setIsSpinning(true);
 		setError("");
@@ -105,7 +119,7 @@ export default function SpinWheel({ currentUserId, currentUserInterests, current
 		if (resolveWinner) {
 			try {
 				const winnerId = await resolveWinner();
-				const serverWinner = candidatePeople.find((candidate) => candidate.id === winnerId);
+				const serverWinner = visiblePeople.find((candidate) => candidate.id === winnerId);
 				if (!serverWinner) throw new Error("The colleague list changed. Refresh and spin again.");
 				winningCandidate = {
 					person: serverWinner,
@@ -120,14 +134,14 @@ export default function SpinWheel({ currentUserId, currentUserInterests, current
 			}
 		}
 
-		const peopleForSpin = visibleWheelPeople(candidatePeople, winningCandidate.person.id, MAX_VISIBLE_WHEEL_PEOPLE);
+		const peopleForSpin = visiblePeople;
 		const winnerIndex = peopleForSpin.findIndex((person) => person.id === winningCandidate.person.id);
 		if (winnerIndex < 0) {
 			setError("The selected colleague is no longer on the wheel. Refresh and spin again.");
 			setIsSpinning(false);
 			return;
 		}
-		setVisibleWinnerId(winningCandidate.person.id);
+
 		setSpinResult(null);
 
 		const turnsBeforeStop = 5;
@@ -218,9 +232,21 @@ export default function SpinWheel({ currentUserId, currentUserInterests, current
 				</p>
 			)}
 			{candidatePeople.length > MAX_VISIBLE_WHEEL_PEOPLE && (
-				<p className="wheel-caption">{candidatePeople.length} colleagues in the draw; showing {visiblePeople.length} on the wheel.</p>
+				<p className="wheel-caption">Showing your top {visiblePeople.length} closest colleagues.</p>
 			)}
 			{candidatePeople.length === 0 && <p className="wheel-caption">No other active colleagues are available yet.</p>}
+			{showWheelDebugPercentages && debugPercentages.length > 0 && (
+				<div>
+					<p className="wheel-caption"><strong>Debug only:</strong> weighted spin percentages (shared interests only)</p>
+					<ul>
+						{debugPercentages.map((person) => (
+							<li key={person.id}>
+								{person.name}: {person.percentage.toFixed(2)}% ({person.sharedInterests} shared interest{person.sharedInterests === 1 ? "" : "s"})
+							</li>
+						))}
+					</ul>
+				</div>
+			)}
 			{error && <p role="alert">{error}</p>}
 		</>
 	);

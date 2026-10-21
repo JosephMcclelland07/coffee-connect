@@ -1,0 +1,22 @@
+ALTER TABLE `Employee`
+  ADD COLUMN `LastLoginAt` DATETIME(3) NULL,
+  ADD COLUMN `LastFailedLoginAt` DATETIME(3) NULL,
+  ADD COLUMN `FailedLoginCount` INTEGER NOT NULL DEFAULT 0;
+
+CREATE TABLE `AuthEvent` (
+  `AuthEventID` INTEGER NOT NULL AUTO_INCREMENT,
+  `EmployeeID` INTEGER NULL,
+  `Email` VARCHAR(255) NULL,
+  `EventType` VARCHAR(30) NOT NULL,
+  `AuthMethod` VARCHAR(30) NOT NULL,
+  `CreatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+  INDEX `IX_AuthEvent_EmployeeID`(`EmployeeID`),
+  INDEX `IX_AuthEvent_CreatedAt`(`CreatedAt`),
+  PRIMARY KEY (`AuthEventID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+ALTER TABLE `AuthEvent`
+  ADD CONSTRAINT `FK_AuthEvent_EmployeeID`
+  FOREIGN KEY (`EmployeeID`) REFERENCES `Employee`(`EmployeeID`)
+  ON DELETE SET NULL ON UPDATE CASCADE;

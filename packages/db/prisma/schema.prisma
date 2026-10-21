@@ -7,16 +7,19 @@ datasource db {
 }
 
 model Employee {
-  employeeId      Int      @id @default(autoincrement()) @map("EmployeeID")
-  firstName       String   @db.VarChar(100) @map("FirstName")
-  lastName        String   @db.VarChar(100) @map("LastName")
-  email           String   @unique @db.VarChar(255) @map("Email")
-  passwordHash    String?  @db.VarChar(255) @map("PasswordHash")
-  officeLocation  String?  @db.VarChar(100) @map("OfficeLocation")
-  department      String?  @db.VarChar(100) @map("Department")
-  role            String?  @db.VarChar(100) @map("Role")
-  isActive        Boolean  @default(true) @map("IsActive")
-  createdDate     DateTime @default(now()) @map("CreatedDate")
+  employeeId      Int       @id @default(autoincrement()) @map("EmployeeID")
+  firstName       String    @db.VarChar(100) @map("FirstName")
+  lastName        String    @db.VarChar(100) @map("LastName")
+  email           String    @unique @db.VarChar(255) @map("Email")
+  passwordHash    String?   @db.VarChar(255) @map("PasswordHash")
+  officeLocation  String?   @db.VarChar(100) @map("OfficeLocation")
+  department      String?   @db.VarChar(100) @map("Department")
+  role            String?   @db.VarChar(100) @map("Role")
+  isActive        Boolean   @default(true) @map("IsActive")
+  createdDate     DateTime  @default(now()) @map("CreatedDate")
+  lastLoginAt     DateTime? @db.DateTime(3) @map("LastLoginAt")
+  lastFailedLoginAt DateTime? @db.DateTime(3) @map("LastFailedLoginAt")
+  failedLoginCount Int      @default(0) @map("FailedLoginCount")
 
   notifications       Notification[]
   interests           EmployeeInterest[]
@@ -25,6 +28,7 @@ model Employee {
   hrAdministrator HRAdministrator?
   microsoftAccount MicrosoftAccount?
   organisedMeetings Meeting[] @relation("MeetingOrganiser")
+  authEvents AuthEvent[]
 
   @@index([email], map: "IX_Employee_Email")
   @@map("Employee")
@@ -155,4 +159,19 @@ model ApiSession {
   expiresAt DateTime @db.DateTime(3)
 
   @@index([expiresAt])
+}
+
+model AuthEvent {
+  authEventId Int @id @default(autoincrement()) @map("AuthEventID")
+  employeeId Int? @map("EmployeeID")
+  email String? @db.VarChar(255) @map("Email")
+  eventType String @db.VarChar(30) @map("EventType")
+  authMethod String @db.VarChar(30) @map("AuthMethod")
+  createdAt DateTime @default(now()) @db.DateTime(3) @map("CreatedAt")
+
+  employee Employee? @relation(fields: [employeeId], references: [employeeId], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([employeeId], map: "IX_AuthEvent_EmployeeID")
+  @@index([createdAt], map: "IX_AuthEvent_CreatedAt")
+  @@map("AuthEvent")
 }

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { createHash } from "node:crypto";
-import { selectWeightedPerson } from "@coffee-connect/matching";
+import { selectWeightedPerson, topMatchPeople } from "@coffee-connect/matching";
 import { type Meeting } from "@prisma/client";
 import { AppError } from "../lib/AppError";
 import { database } from "../lib/database";
@@ -41,14 +41,23 @@ calendarRouter.get("/matches", async (req, res) => {
   res.json(matches.map((match) => ({ matchId: match.matchId, colleague: match.employeeOneId === employeeId ? match.employeeTwo : match.employeeOne })));
 });
 
-async function wheelPeople() {
-  return database().employee.findMany({ where: { isActive: true },
-    select: { employeeId: true, firstName: true, lastName: true, interests: { select: { interest: { select: { interestName: true, categoryId: true } } } } },
+async function wheelPeople(employeeId: number) {
+  const current = await database().employee.findUnique({ where: { employeeId }, select: { officeLocation: true } });
+  if (!current) throw new AppError(404, "Employee not found.");
+  if (!current.officeLocation) {
+    return database().employee.findMany({ where: { employeeId, isActive: true },
+      select: { employeeId: true, firstName: true, lastName: true, officeLocation: true,
+        interests: { select: { interest: { select: { interestName: true, categoryId: true } } } } },
+      orderBy: { employeeId: "asc" } });
+  }
+  return database().employee.findMany({ where: { isActive: true, officeLocation: current.officeLocation },
+    select: { employeeId: true, firstName: true, lastName: true, officeLocation: true,
+      interests: { select: { interest: { select: { interestName: true, categoryId: true } } } } },
     orderBy: { employeeId: "asc" } });
 }
 
-calendarRouter.get("/people", async (_req, res) => {
-  const people = await wheelPeople();
+calendarRouter.get("/people", async (req, res) => {
+  const people = await wheelPeople(Number(req.user!.id));
   res.json(people.map((person) => ({ id: String(person.employeeId), name: `${person.firstName} ${person.lastName}`.trim(),
     interests: person.interests.map((item) => item.interest.interestName),
     categories: [...new Set(person.interests.flatMap((item) => item.interest.categoryId === null ? [] : [String(item.interest.categoryId)]))] })));
@@ -56,14 +65,15 @@ calendarRouter.get("/people", async (_req, res) => {
 
 calendarRouter.post("/matches", async (req, res) => {
   const employeeId = Number(req.user!.id);
-  const people = await wheelPeople();
+  const people = await wheelPeople(employeeId);
   const current = people.find((person) => person.employeeId === employeeId);
-  const candidates = people.map((person) => ({ id: String(person.employeeId), person,
+  const candidates = people.map((person) => ({ id: String(person.employeeId), name: `${person.firstName} ${person.lastName}`.trim(), person,
     interests: person.interests.map((item) => item.interest.interestName),
     categories: [...new Set(person.interests.flatMap((item) => item.interest.categoryId === null ? [] : [String(item.interest.categoryId)]))] }));
-  const winner = selectWeightedPerson(candidates, String(employeeId),
-    current?.interests.map((item) => item.interest.interestName) ?? [], undefined,
-    current?.interests.flatMap((item) => item.interest.categoryId === null ? [] : [String(item.interest.categoryId)]) ?? []);
+  const currentInterests = current?.interests.map((item) => item.interest.interestName) ?? [];
+  const currentCategories = current?.interests.flatMap((item) => item.interest.categoryId === null ? [] : [String(item.interest.categoryId)]) ?? [];
+  const rankedCandidates = topMatchPeople(candidates, String(employeeId), currentInterests, currentCategories, 8);
+  const winner = selectWeightedPerson(rankedCandidates, String(employeeId), currentInterests, undefined, currentCategories);
   if (!winner) throw new AppError(409, "No connected colleagues are available yet.");
   const selected = winner.person.person;
   const existing = await database().match.findFirst({ where: { OR: [

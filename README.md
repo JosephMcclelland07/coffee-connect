@@ -60,20 +60,19 @@ Restart the API after changing root settings, and Next.js after changing its pro
 
 The Outlook migration adds `MicrosoftAccount`, `ApiSession`, and nullable Outlook fields on `Meeting`. Existing meeting date/time fields remain for compatibility; `startsAt` and `endsAt` are the authoritative UTC instants for Outlook meetings. Each employee's scheduling timezone is stored separately.
 
-On the local database used during implementation, the Outlook migration **has already been applied**. Do not rerun its SQL.
+Migration history has been rebased to a single canonical baseline:
 
-**Existing migration warning:** `20261013160000_two_employee_matches` is still pending in Prisma history even though its employee-pair columns exist. The database is also missing older foreign keys. That SQL drops `Match_Participant`, so do not blindly run `prisma migrate deploy`, `migrate dev`, `db push`, a reset, or `db:setup` against this existing database. Reconcile the older schema/history with a backup and administrator review separately.
+- `packages/db/prisma/migrations/20261021140000_baseline` is the supported starting point for Prisma migration replay.
+- `packages/db/prisma/migrations_legacy/` contains historical migrations kept for reference only; do not use that directory as your Prisma migrations source.
 
-For this database, only the new additive migration was applied and recorded:
+For existing local databases that were previously synced manually, ensure schema parity with:
 
 ```bash
-cd packages/db
-node ../../node_modules/prisma/build/index.js db execute --file prisma/migrations/20261016120000_outlook_integration/migration.sql --config prisma7.config.ts
-node ../../node_modules/prisma/build/index.js migrate resolve --applied 20261016120000_outlook_integration --config prisma7.config.ts
-cd ../..
+npm exec -w packages/db -- prisma db push --config prisma7.config.ts
+npm exec -w packages/db -- prisma migrate resolve --applied 20261021140000_baseline --config prisma7.config.ts
 ```
 
-The first command executed only the new Outlook SQL. The second recorded that exact migration in Prisma's history, without falsely marking the partially applied older migration complete. These commands are an explanation of what was run, not instructions to repeat on this database. For another environment, inspect its migration state and back it up first.
+For new environments, use normal migration workflows against `prisma/migrations`.
 
 ## 4. Install, Check, and Run
 Coffee Connect is a monorepo for an employee coffee-meetup platform, with a Next.js frontend, an Express API, and a MySQL database accessed through Prisma.
@@ -181,10 +180,10 @@ Open `http://localhost:3000`. `/signup` now registers a real account and sends t
 ## Verified Status and Remaining Gaps
 
 - The nullable `Employee.PasswordHash` column was missing after the login merge. Migration `20261016150000_employee_password_hash` has now been applied and recorded locally without changing existing employee records. Do not rerun its SQL on this database.
-- The older migration-history/foreign-key drift described above remains unresolved. Do not reset or blindly deploy migrations to this existing database.
+- Prisma migrations are now baselined at `20261021140000_baseline`; legacy migrations are archived under `packages/db/prisma/migrations_legacy` for historical context only.
 - Real Outlook sign-in, availability and invitations require the tenant configuration and two authorised test mailboxes. Browser demonstrations are not proof of real Microsoft access.
 - Password registration checks the `@paconsulting.com` domain but does **not** verify ownership of that mailbox. Do not expose password registration publicly before adding ownership verification or restricting registration to a trusted provisioning process; Microsoft SSO is the preferred verified organisational identity path.
-- The Personal/profile editor currently stores interests, office days and hours in browser storage. It does not update database interests used by the matching wheel or automatically update calendar preferences. Calendar preferences are managed separately on Meetups. This needs a separate persisted profile workflow before claiming end-to-end interest matching.
+- The Personal/profile editor now persists selected interests and office location to the database for the signed-in employee. Office days and available hours remain browser-local profile preferences; calendar preferences are still managed separately on Meetups.
 - The chat component is a local demonstration, not server-backed messaging. Notifications and background Outlook webhook delivery are not implemented.
 - Review dependency audit findings and configure HTTPS, secret management, database TLS and retention before production deployment. Successful builds/tests alone do not certify production readiness.
 npm run dev:web
