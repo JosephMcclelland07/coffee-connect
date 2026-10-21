@@ -1,10 +1,13 @@
-export type MatchingPerson = { id: string; interests: readonly string[] };
+export type MatchingPerson = { id: string; interests: readonly string[]; categories?: readonly (string | number)[] };
 
 export function sharedInterestCount(currentInterests: readonly string[], candidateInterests: readonly string[]): number;
+export function sharedCategoryCount(currentCategories: readonly (string | number)[], candidateCategories: readonly (string | number)[]): number;
+export function visibleWheelPeople<Person extends MatchingPerson>(people: readonly Person[], winnerId: string | null, maximumVisible?: number): Person[];
 
 export function selectWeightedPerson<Person extends MatchingPerson>(
   people: readonly Person[],
   currentUserId: string,
   currentInterests: readonly string[],
   draw?: (maximum: number) => number,
-): { person: Person; sharedInterests: number; weight: number } | undefined;
+  currentCategories?: readonly (string | number)[],
+): { person: Person; sharedInterests: number; sharedCategories: number; weight: number } | undefined;

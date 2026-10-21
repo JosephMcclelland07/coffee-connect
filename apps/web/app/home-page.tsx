@@ -1,8 +1,42 @@
-import Image from "next/image";
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { Coffee, MessageCircle, UsersRound } from "lucide-react";
+import SpinWheel from "../components/spin-wheel";
 import { SiteFooter, SiteHeader } from "./site-chrome";
 
-export default function HomePage() {
+type HomeWheelPerson = { id: string; name: string; interests: string[]; categories: string[] };
+type HomeWheelData = { accountId: string; people: HomeWheelPerson[] };
+
+async function loadHomeWheelData(): Promise<HomeWheelData | null> {
+	try {
+		const cookieStore = await cookies();
+		const sessionCookie = cookieStore.get("cc.sid")?.value;
+		const token = cookieStore.get("coffee_connect_session")?.value;
+		const apiHeaders = new Headers();
+		if (sessionCookie) apiHeaders.set("cookie", `cc.sid=${sessionCookie}`);
+		if (token) apiHeaders.set("authorization", `Bearer ${token}`);
+
+		const apiOrigin = process.env.API_ORIGIN || process.env.API_URL || "http://127.0.0.1:4000";
+		const accountResponse = await fetch(`${apiOrigin}/me`, { headers: apiHeaders, cache: "no-store" });
+		if (!accountResponse.ok) return null;
+		const accountPayload = await accountResponse.json() as { account?: { id?: number } };
+		if (!accountPayload.account?.id) return null;
+
+		const peopleResponse = await fetch(`${apiOrigin}/calendar/people`, { headers: apiHeaders, cache: "no-store" });
+		if (!peopleResponse.ok) return null;
+		const people = await peopleResponse.json() as HomeWheelPerson[];
+		if (!Array.isArray(people)) return null;
+
+		return { accountId: String(accountPayload.account.id), people };
+	} catch {
+		return null;
+	}
+}
+
+export default async function HomePage() {
+	const homeWheelData = await loadHomeWheelData();
+	const currentPerson = homeWheelData?.people.find((person) => person.id === homeWheelData.accountId);
+
 	return (
 		<>
 			<SiteHeader activePage="home" />
@@ -10,57 +44,73 @@ export default function HomePage() {
 			<main>
 				<section className="hero page-width" id="home">
 					<div className="hero-copy">
-						<p className="eyebrow">Good coffee. Good company.</p>
-						<h1>Welcome to Coffee Connect! ☕</h1>
+						<p className="eyebrow">Coffee Connect</p>
+						<h1>Good coffee.<br />Great conversations.</h1>
 						<p className="hero-description">
-							Find your next favourite conversation, one cup at a time.
+							Take a spin and meet someone new. Coffee Connect pairs you with another person for an easy, informal coffee chat, turning unfamiliar faces into new connections.
 						</p>
-						<Link className="button-primary" href="/meetups">Meet up Now!</Link>
+						<div className="hero-actions">
+							<Link className="button-primary" href="/meetups">Spin the wheel</Link>
+							<Link className="text-link" href="#how-it-works">See how it works <span aria-hidden="true">↓</span></Link>
+						</div>
 					</div>
-					<div className="hero-image-wrap">
-						<Image
-							className="hero-image"
-							src="/coffee-hero.jpg"
-							alt="A cup of coffee surrounded by roasted coffee beans"
-							width={1800}
-							height={940}
-							priority
-							sizes="(max-width: 760px) 100vw, 1320px"
-						/>
+					<div className="hero-wheel-wrap">
+						{homeWheelData && currentPerson ? (
+							<>
+								<SpinWheel
+									currentUserId={homeWheelData.accountId}
+									currentUserInterests={currentPerson.interests}
+									currentUserCategories={currentPerson.categories}
+									people={homeWheelData.people}
+								/>
+								<Link className="hero-spin-link" href="/meetups">Your meetups</Link>
+							</>
+						) : (
+							<div className="home-wheel-empty">
+								<p>Sign in to see your colleagues and spin.</p>
+								<Link className="hero-spin-link" href="/login">Sign in</Link>
+							</div>
+						)}
 					</div>
 				</section>
 
-				<section className="steps-section page-width" id="how-it-works">
-					<div className="section-heading">
-						<p className="eyebrow">How it works</p>
-						<h2>Three steps to a better coffee break.</h2>
-					</div>
-					<div className="steps-grid">
-						<article className="step-item">
-							<span className="step-number">01</span>
-							<h3>Fill in your interests</h3>
-							<p>Make your interests known so the wheel can find your next coffee companion.</p>
-						</article>
-						<article className="step-item">
-							<span className="step-number">02</span>
-							<h3>Spin the wheel</h3>
-							<p>Spin the wheel to find your next coffee companion.</p>
-						</article>
-						<article className="step-item">
-							<span className="step-number">03</span>
-							<h3>Meet over coffee</h3>
-							<p>Show up, settle in, and enjoy a real conversation, make new friends.</p>
-						</article>
+				<section className="steps-band" id="how-it-works">
+					<div className="page-width steps-section">
+						<div className="section-heading">
+							<p className="eyebrow">How it works</p>
+							<h2>Three steps. One new connection.</h2>
+							<p>No awkward intros. Just spin, match and grab a coffee.</p>
+						</div>
+						<div className="steps-grid">
+							<article className="step-item">
+								<span className="step-number">01</span>
+								<Coffee className="step-icon" aria-hidden="true" />
+								<h3>Spin the wheel</h3>
+								<p>Let Coffee Connect choose who you meet.</p>
+							</article>
+							<article className="step-item">
+								<span className="step-number">02</span>
+								<UsersRound className="step-icon" aria-hidden="true" />
+								<h3>Meet your match</h3>
+								<p>See your match and learn a little about them first.</p>
+							</article>
+							<article className="step-item">
+								<span className="step-number">03</span>
+								<MessageCircle className="step-icon" aria-hidden="true" />
+								<h3>Grab a coffee</h3>
+								<p>Arrange a meetup, pick a drink and start the conversation.</p>
+							</article>
+						</div>
 					</div>
 				</section>
 
 				<section className="join-section" id="join">
 					<div className="page-width join-inner">
 						<div>
-							<p className="eyebrow">Your next coffee is waiting</p>
-							<h2>Good coffee is even better shared.</h2>
+							<p className="eyebrow">Ready to meet someone new?</p>
+							<h2>Your next great conversation could be one spin away.</h2>
 						</div>
-						<Link className="button-light" href="/meetups">Explore meetups</Link>
+						<Link className="button-light" href="/meetups">Spin the wheel <span aria-hidden="true">→</span></Link>
 					</div>
 				</section>
 			</main>

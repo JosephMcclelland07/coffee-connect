@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandLogo from "../components/brand-logo";
 
 type SiteHeaderProps = {
 	activePage: "home" | "meetups" | "personal";
@@ -12,8 +13,8 @@ export async function SiteHeader({ activePage }: SiteHeaderProps) {
 	return (
 		<header className="site-header">
 			<div className="page-width header-inner">
-				<Link className="wordmark" href={isHome ? "#home" : "/"}>
-					Coffee Connect
+				<Link className="brand-logo-link" href={isHome ? "#home" : "/"} aria-label="Coffee Connect home">
+					<BrandLogo />
 				</Link>
 				<nav className="site-nav" aria-label="Main navigation">
 					<Link

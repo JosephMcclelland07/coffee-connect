@@ -2,8 +2,8 @@
 	position: relative;
 	min-height: 100vh;
 	min-height: 100svh;
-	background: #f5f7f4;
-	color: #1c2925;
+	background: var(--soft);
+	color: var(--ink);
 	font-family: var(--font-sans, sans-serif);
 }
 
@@ -14,72 +14,7 @@
 	right: clamp(1.5rem, 5vw, 4rem);
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-}
-
-.brandName {
-	margin: 0;
-	color: #17483e;
-	font-size: 1.25rem;
-	font-weight: 600;
-}
-
-.logo {
-	position: relative;
-	width: 5rem;
-	height: 4.55rem;
-	flex: 0 0 auto;
-}
-
-.disc {
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	width: 80%;
-	aspect-ratio: 1;
-	display: grid;
-	place-items: center;
-	border-radius: 50%;
-	background: #f12b45;
-	color: #fff;
-	font-size: 2rem;
-	font-weight: 600;
-	line-height: 1;
-}
-
-.letters {
-	transform: rotate(180deg);
-}
-
-.bubbleLarge,
-.bubbleMedium,
-.bubbleSmall {
-	position: absolute;
-	border-radius: 50%;
-	background: #82929e;
-}
-
-.bubbleLarge {
-	top: 0;
-	left: 60%;
-	width: 20%;
-	aspect-ratio: 1;
-	border: 2px solid #f5f7f4;
-	box-sizing: content-box;
-}
-
-.bubbleMedium {
-	top: 23%;
-	left: 78%;
-	width: 12%;
-	aspect-ratio: 1;
-}
-
-.bubbleSmall {
-	top: 7%;
-	left: 86%;
-	width: 6%;
-	aspect-ratio: 1;
+	justify-content: flex-start;
 }
 
 .loginPanel {
@@ -97,7 +32,7 @@
 
 .kicker {
 	margin: 0 0 0.75rem;
-	color: #397260;
+	color: var(--red-dark);
 	font-size: 0.75rem;
 	font-weight: 700;
 	letter-spacing: 0.08em;
@@ -112,7 +47,7 @@
 
 .intro {
 	margin: 0.75rem 0 2rem;
-	color: #62716b;
+	color: var(--muted);
 }
 
 .form {
@@ -123,7 +58,7 @@
 .field {
 	display: grid;
 	gap: 0.5rem;
-	color: #293a34;
+	color: var(--ink);
 	font-size: 0.9rem;
 	font-weight: 600;
 }
@@ -132,17 +67,17 @@
 	width: 100%;
 	min-height: 3.25rem;
 	box-sizing: border-box;
-	border: 1px solid #bdcbc3;
-	border-radius: 6px;
+	border: 1px solid var(--line);
+	border-radius: 4px;
 	padding: 0.75rem 0.875rem;
-	background: #fff;
-	color: #1c2925;
+	background: var(--paper);
+	color: var(--ink);
 	font: inherit;
 }
 
 .field input:focus-visible {
-	border-color: #26715c;
-	outline: 3px solid #26715c33;
+	border-color: var(--red);
+	outline: 3px solid color-mix(in srgb, var(--red) 25%, transparent);
 }
 
 .submitButton {
@@ -151,17 +86,58 @@
 	justify-content: center;
 	min-height: 3.25rem;
 	border: 0;
-	border-radius: 6px;
+	border-radius: 4px;
 	padding: 0.75rem 1rem;
-	background: #17483e;
-	color: #fff;
+	background: var(--red);
+	color: var(--paper);
 	font: inherit;
 	font-weight: 600;
 	cursor: pointer;
 }
 
 .submitButton:hover {
-	background: #103a32;
+	background: var(--red-dark);
+}
+
+.microsoftButton {
+	display: flex;
+	min-height: 3.25rem;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	margin-bottom: 0;
+	border: 0;
+	border-radius: 4px;
+	background: var(--ink);
+	color: var(--paper);
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.microsoftButton:hover:not(:disabled) {
+	background: #54392e;
+}
+
+.microsoftButton:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.microsoftButton:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--red) 40%, transparent);
+	outline-offset: 2px;
+}
+
+.microsoftGroup {
+	margin-bottom: 0.75rem;
+}
+
+.microsoftSetupNote {
+	margin: 0.5rem 0 0;
+	color: var(--muted);
+	font-size: 0.8rem;
+	text-align: center;
 }
 
 .submitButton:disabled {
@@ -175,14 +151,14 @@
 	padding: 10px;
 	border: 0;
 	background: transparent;
-	color: #17483e;
+	color: var(--red-dark);
 	font: inherit;
 	text-decoration: underline;
 	cursor: pointer;
 }
 
 .submitButton:focus-visible {
-	outline: 3px solid #26715c66;
+	outline: 3px solid color-mix(in srgb, var(--red) 40%, transparent);
 	outline-offset: 2px;
 }
 
@@ -192,54 +168,52 @@
 	align-items: center;
 	justify-content: center;
 	margin-top: 0.75rem;
-	border: 1px solid #17483e;
-	border-radius: 6px;
-	color: #17483e;
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	background: var(--paper);
+	color: var(--red-dark);
 	font-weight: 600;
 	text-decoration: none;
 	transition: background-color 160ms ease;
 }
 
 .signupLink:hover {
-	background: #e8f0ec;
+	background: color-mix(in srgb, var(--red) 10%, var(--paper));
 }
 
 .signupLink:focus-visible {
-	outline: 3px solid #26715c66;
+	outline: 3px solid color-mix(in srgb, var(--red) 40%, transparent);
 	outline-offset: 2px;
 }
 
 .prototypeNote {
 	margin: 1rem 0 0;
-	color: #62716b;
+	color: var(--muted);
 	font-size: 0.8rem;
 	line-height: 1.5;
 }
 
 .errorMessage {
 	margin: 0;
-	color: #a92120;
+	padding: 0.75rem;
+	border: 1px solid color-mix(in srgb, var(--red-dark) 35%, var(--line));
+	border-radius: 4px;
+	background: color-mix(in srgb, var(--red) 10%, var(--paper));
+	color: var(--red-dark);
 	font-size: 0.875rem;
 }
 
-	@media (max-width: 480px) {
+.statusMessage {
+	margin: 0;
+	color: var(--muted);
+	font-size: 0.875rem;
+}
+
+@media (max-width: 480px) {
 	.header {
 		top: 1rem;
 		left: 1rem;
 		right: 1rem;
-	}
-
-	.brandName {
-		font-size: 1.05rem;
-	}
-
-	.logo {
-		width: 4.4rem;
-		height: 4rem;
-	}
-
-	.disc {
-		font-size: 1.75rem;
 	}
 
 	.loginPanel {
