@@ -2,13 +2,12 @@ import Link from "next/link";
 import BrandLogo from "../components/brand-logo";
 
 type SiteHeaderProps = {
-	activePage: "home" | "meetups" | "personal";
+	activePage: "home" | "meetups" | "accounts";
 };
 
 export async function SiteHeader({ activePage }: SiteHeaderProps) {
 	const isHome = activePage === "home";
 	const isMeetups = activePage === "meetups";
-	const isPersonal = activePage === "personal";
 
 	return (
 		<header className="site-header">
@@ -31,16 +30,10 @@ export async function SiteHeader({ activePage }: SiteHeaderProps) {
 					>
 						Meetups
 					</Link>
-					<Link
-						className="nav-link"
-						href={isPersonal ? "#personal" : "/personal"}
-						aria-current={isPersonal ? "page" : undefined}
-					>
-						Personal
+					<Link className="signup-link" href="/accounts">
+						Accounts
 					</Link>
-					<Link className="signup-link" href="/meetups">
-						Account
-					</Link>
+
 				</nav>
 			</div>
 		</header>
