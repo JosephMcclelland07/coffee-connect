@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import SpinWheel from "./spin-wheel";
+import { HOME_SPIN_EVENT } from "./home-spin-button";
 
 type Person = { id: string; name: string; interests: string[]; categories: string[] };
 type Props = {
@@ -20,13 +21,26 @@ export default function HomeSpinGate({ currentUserId, currentUserInterests, curr
   const [winner, setWinner] = useState<Winner | null>(null);
   const [navigating, setNavigating] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const spinRootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    function triggerSpinFromHero() {
+      if (winner || navigating) return;
+      spinRootRef.current?.querySelector<HTMLButtonElement>(".spin-wheel-control")?.click();
+    }
+
+    window.addEventListener(HOME_SPIN_EVENT, triggerSpinFromHero);
+    return () => {
+      window.removeEventListener(HOME_SPIN_EVENT, triggerSpinFromHero);
+    };
+  }, [winner, navigating]);
+
   return (
-    <>
+    <div ref={spinRootRef}>
       <SpinWheel
         currentUserId={currentUserId}
         currentUserInterests={currentUserInterests}
@@ -53,6 +67,6 @@ export default function HomeSpinGate({ currentUserId, currentUserInterests, curr
         </div>,
         document.body,
       )}
-    </>
+    </div>
   );
 }

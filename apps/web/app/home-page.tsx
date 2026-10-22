@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { Coffee, MessageCircle, UsersRound } from "lucide-react";
 import HomeSpinGate from "../components/home-spin-gate";
+import HomeSpinButton from "../components/home-spin-button";
 import { SiteFooter, SiteHeader } from "./site-chrome";
 
 type HomeWheelPerson = { id: string; name: string; interests: string[]; categories: string[] };
@@ -36,6 +37,7 @@ async function loadHomeWheelData(): Promise<HomeWheelData | null> {
 export default async function HomePage() {
 	const homeWheelData = await loadHomeWheelData();
 	const currentPerson = homeWheelData?.people.find((person) => person.id === homeWheelData.accountId);
+	const canSpinOnHome = Boolean(homeWheelData && currentPerson);
 
 	return (
 		<>
@@ -50,11 +52,11 @@ export default async function HomePage() {
 							Take a spin and meet someone new. Coffee Connect pairs you with another person for an easy, informal coffee chat, turning unfamiliar faces into new connections.
 						</p>
 						<div className="hero-actions">
-							<Link className="button-primary" href="/meetups">Spin the wheel</Link>
+							<HomeSpinButton className="button-primary" canSpin={canSpinOnHome}>Spin the wheel</HomeSpinButton>
 							<Link className="text-link" href="#how-it-works">See how it works <span aria-hidden="true">↓</span></Link>
 						</div>
 					</div>
-					<div className="hero-wheel-wrap">
+					<div className="hero-wheel-wrap" id="home-wheel">
 						{homeWheelData && currentPerson ? (
 							<>
 								<HomeSpinGate
@@ -110,7 +112,7 @@ export default async function HomePage() {
 							<p className="eyebrow">Ready to meet someone new?</p>
 							<h2>Your next great conversation could be one spin away.</h2>
 						</div>
-						<Link className="button-light" href="/meetups">Spin the wheel <span aria-hidden="true">→</span></Link>
+						<HomeSpinButton className="button-light" canSpin={canSpinOnHome}>Spin the wheel <span aria-hidden="true">→</span></HomeSpinButton>
 					</div>
 				</section>
 			</main>
