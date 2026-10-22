@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { Coffee, MessageCircle, UsersRound } from "lucide-react";
-import SpinWheel from "../components/spin-wheel";
+import HomeSpinGate from "../components/home-spin-gate";
 import { SiteFooter, SiteHeader } from "./site-chrome";
 
 type HomeWheelPerson = { id: string; name: string; interests: string[]; categories: string[] };
@@ -22,7 +22,7 @@ async function loadHomeWheelData(): Promise<HomeWheelData | null> {
 		const accountPayload = await accountResponse.json() as { account?: { id?: number } };
 		if (!accountPayload.account?.id) return null;
 
-		const peopleResponse = await fetch(`${apiOrigin}/calendar/people`, { headers: apiHeaders, cache: "no-store" });
+		const peopleResponse = await fetch(`${apiOrigin}/scheduler/people`, { headers: apiHeaders, cache: "no-store" });
 		if (!peopleResponse.ok) return null;
 		const people = await peopleResponse.json() as HomeWheelPerson[];
 		if (!Array.isArray(people)) return null;
@@ -57,7 +57,7 @@ export default async function HomePage() {
 					<div className="hero-wheel-wrap">
 						{homeWheelData && currentPerson ? (
 							<>
-								<SpinWheel
+								<HomeSpinGate
 									currentUserId={homeWheelData.accountId}
 									currentUserInterests={currentPerson.interests}
 									currentUserCategories={currentPerson.categories}

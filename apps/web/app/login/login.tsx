@@ -114,7 +114,7 @@ export default function LoginPage() {
 						<>
 							<p className={styles.intro}>{account.email}</p>
 							<Link className={styles.signupLink} href="/meetups">Your meetups</Link>
-							<Link className={styles.signupLink} href="/personal">Your profile</Link>
+							<Link className={styles.signupLink} href="/accounts">Your account</Link>
 							<button className={styles.submitButton} type="button" disabled={pending} onClick={logout}>Log out</button>
 						</>
 					) : (
